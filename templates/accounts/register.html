@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="form-card">
+    <h2>Create account</h2>
+    <p class="muted">Start with a private calendar. Friends and invites come next.</p>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Create account</button>
+    </form>
+</section>
+
+<p class="bottom-text">
+    Already have an account?
+    <a href="{% url 'login' %}">Log in</a>
+</p>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<article class="detail-card">
+    <p class="event-time">{{ event.start_at|date:"l, M d, H:i" }}</p>
+    <h2>{{ event.title }}</h2>
+
+    {% if event.description %}
+        <p class="description">{{ event.description }}</p>
+    {% endif %}
+
+    <dl class="details">
+        {% if event.end_at %}
+            <div>
+                <dt>Ends</dt>
+                <dd>{{ event.end_at|date:"M d, H:i" }}</dd>
+            </div>
+        {% endif %}
+
+        {% if event.location %}
+            <div>
+                <dt>Location</dt>
+                <dd>{{ event.location }}</dd>
+            </div>
+        {% endif %}
+
+        <div>
+            <dt>Visibility</dt>
+            <dd>{{ event.get_visibility_display }}</dd>
+        </div>
+    </dl>
+</article>
+
+<section class="actions">
+    <a href="{% url 'event_update' event.pk %}" class="button-link">Edit</a>
+    <a href="{% url 'event_delete' event.pk %}" class="danger-link">Delete</a>
+    <a href="{% url 'event_list' %}">Back</a>
+</section>
+{% endblock %}

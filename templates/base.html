@@ -1,0 +1,42 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planly</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}?v=3">
+</head>
+<body>
+    <main class="app">
+        <header class="app-header">
+            <div>
+                <p class="eyebrow">calendar for plans</p>
+                <h1>Planly</h1>
+                {% if user.is_authenticated %}
+                    <p class="hello">Logged in as {{ user.username }}</p>
+                {% endif %}
+            </div>
+
+            {% if user.is_authenticated %}
+                <form method="post" action="{% url 'logout' %}" class="logout-form">
+                    {% csrf_token %}
+                    <button type="submit" class="link-button">Log out</button>
+                </form>
+            {% endif %}
+        </header>
+
+        <section class="content">
+            {% block content %}
+            {% endblock %}
+        </section>
+
+        {% if user.is_authenticated %}
+            <nav class="bottom-nav">
+                <a href="{% url 'event_list' %}">Home</a>
+                <a href="{% url 'event_create' %}">Add</a>
+            </nav>
+        {% endif %}
+    </main>
+</body>
+</html>

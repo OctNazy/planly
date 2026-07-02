@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="form-card">
+    <div class="create-tabs">
+        <a href="{% url 'event_create' %}" class="{% if active_tab == 'event' %}active{% endif %}">Event</a>
+        <a href="{% url 'reminder_create' %}" class="{% if active_tab == 'reminder' %}active{% endif %}">Reminder</a>
+    </div>
+
+    {% if event %}
+        <h2>Edit plan</h2>
+    {% else %}
+        <h2>New event</h2>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Save plan</button>
+    </form>
+</section>
+
+<p class="bottom-text">
+    <a href="{% url 'event_list' %}">Back to plans</a>
+</p>
+{% endblock %}
