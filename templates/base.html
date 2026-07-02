@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Planly</title>
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
 <body>
     <main class="app">
@@ -32,10 +32,23 @@
         </section>
 
         {% if user.is_authenticated %}
-            <nav class="bottom-nav">
-                <a href="{% url 'event_list' %}">Home</a>
-                <a href="{% url 'event_create' %}">Add</a>
-            </nav>
+            {% with current_url=request.resolver_match.url_name %}
+                <nav class="bottom-nav">
+                    {% if current_url == 'event_list' %}
+                        <span class="active">Plans</span>
+                    {% else %}
+                        <a href="{% url 'event_list' %}">Plans</a>
+                    {% endif %}
+
+                    {% if current_url == 'event_create' or current_url == 'reminder_create' %}
+                        <span class="active">Create</span>
+                    {% else %}
+                        <a href="{% url 'event_create' %}">
+                            Create
+                        </a>
+                    {% endif %}
+                </nav>
+            {% endwith %}
         {% endif %}
     </main>
 </body>

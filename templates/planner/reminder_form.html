@@ -3,14 +3,17 @@
 {% block content %}
 <section class="form-card">
     <div class="create-tabs">
-        <a href="{% url 'event_create' %}" class="{% if active_tab == 'event' %}active{% endif %}">Event</a>
-        <a href="{% url 'reminder_create' %}" class="{% if active_tab == 'reminder' %}active{% endif %}">Reminder</a>
+        <a href="{% url 'event_create' %}">Event</a>
+        <span class="active">Reminder</span>
     </div>
 
-    <h2>New reminder</h2>
-    <p class="muted">Reminders are always private. Use them for birthdays, calls, payments, or small tasks.</p>
+    <div class="form-head">
+        <p class="eyebrow">reminder</p>
+        <h2>New reminder</h2>
+        <p class="muted">Reminders are private. Use them for birthdays, calls, payments, or small tasks.</p>
+    </div>
 
-    <form method="post">
+    <form method="post" class="plan-form">
         {% csrf_token %}
         {{ form.as_p }}
         <button type="submit">Save reminder</button>

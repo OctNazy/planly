@@ -52,7 +52,7 @@ def event_create(request):
     else:
         form = EventForm()
 
-    return render(request, "planner/event_form.html", {"form": form, "active_tab": "event"})
+    return render(request, "planner/event_form.html", {"form": form})
 
 
 @login_required
@@ -74,7 +74,6 @@ def event_update(request, pk):
         {
             "form": form,
             "event": event,
-            "active_tab": "event",
         },
     )
 
@@ -108,7 +107,6 @@ def reminder_create(request):
         "planner/reminder_form.html",
         {
             "form": form,
-            "active_tab": "reminder",
         },
     )
 
@@ -122,3 +120,9 @@ def reminder_done(request, pk):
         reminder.save()
 
     return redirect("event_list")
+
+
+@login_required
+def reminder_detail(request, pk):
+    reminder = get_object_or_404(Reminder, pk=pk, owner=request.user)
+    return render(request, "planner/reminder_detail.html", {"reminder": reminder})

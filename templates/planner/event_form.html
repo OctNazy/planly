@@ -2,21 +2,28 @@
 
 {% block content %}
 <section class="form-card">
-    <div class="create-tabs">
-        <a href="{% url 'event_create' %}" class="{% if active_tab == 'event' %}active{% endif %}">Event</a>
-        <a href="{% url 'reminder_create' %}" class="{% if active_tab == 'reminder' %}active{% endif %}">Reminder</a>
-    </div>
-
-    {% if event %}
-        <h2>Edit plan</h2>
-    {% else %}
-        <h2>New event</h2>
+    {% if not event %}
+        <div class="create-tabs">
+            <span class="active">Event</span>
+            <a href="{% url 'reminder_create' %}">Reminder</a>
+        </div>
     {% endif %}
 
-    <form method="post">
+    <div class="form-head">
+        {% if event %}
+            <p class="eyebrow">event</p>
+            <h2>Edit event</h2>
+        {% else %}
+            <p class="eyebrow">event</p>
+            <h2>New event</h2>
+        {% endif %}
+        <p class="muted">Use events for plans with a start time and optional end time.</p>
+    </div>
+
+    <form method="post" class="plan-form">
         {% csrf_token %}
         {{ form.as_p }}
-        <button type="submit">Save plan</button>
+        <button type="submit">Save event</button>
     </form>
 </section>
 

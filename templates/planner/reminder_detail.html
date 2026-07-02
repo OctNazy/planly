@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<article class="detail-card">
+    <p class="event-time">
+        {{ reminder.remind_date|date:"l, M d" }}
+        {% if reminder.remind_time %}
+            at {{ reminder.remind_time|time:"H:i" }}
+        {% else %}
+            · all day
+        {% endif %}
+    </p>
+    <h2>{{ reminder.title }}</h2>
+
+    {% if reminder.note %}
+        <p class="description">{{ reminder.note }}</p>
+    {% endif %}
+
+    <dl class="details">
+        <div>
+            <dt>Repeat</dt>
+            <dd>{{ reminder.get_repeat_display }}</dd>
+        </div>
+
+        <div>
+            <dt>Remove mode</dt>
+            <dd>{{ reminder.get_remove_mode_display }}</dd>
+        </div>
+
+        <div>
+            <dt>Status</dt>
+            <dd>
+                {% if reminder.is_done %}
+                    Done
+                {% else %}
+                    Active
+                {% endif %}
+            </dd>
+        </div>
+    </dl>
+</article>
+
+<section class="actions">
+    {% if not reminder.is_done %}
+        <form method="post" action="{% url 'reminder_done' reminder.pk %}" class="done-form">
+            {% csrf_token %}
+            <button type="submit">Done</button>
+        </form>
+    {% endif %}
+    <a href="{% url 'event_list' %}">Back</a>
+</section>
+{% endblock %}

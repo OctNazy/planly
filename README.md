@@ -1,6 +1,6 @@
 # Planly
 
-Planly is a shared calendar app for personal plans and future group plans with friends.
+Planly is a shared calendar app for personal plans, reminders, and group plans with friends.
 
 This is a Django portfolio project. The first version is intentionally simple: user accounts and private events. Friend requests, invitations, and Telegram Mini App integration will be added after the base app works well.
 

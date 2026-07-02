@@ -93,3 +93,28 @@ class EventViewsTests(TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertTrue(reminder.is_done)
+
+    def test_user_can_open_own_reminder(self):
+        reminder = Reminder.objects.create(
+            owner=self.user,
+            title="Call grandma",
+            remind_date="2026-07-12",
+        )
+        self.client.login(username="nazar", password="testpass123")
+
+        response = self.client.get(reverse("reminder_detail", args=[reminder.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Call grandma")
+
+    def test_user_cannot_open_other_user_reminder(self):
+        reminder = Reminder.objects.create(
+            owner=self.other_user,
+            title="Private reminder",
+            remind_date="2026-07-12",
+        )
+        self.client.login(username="nazar", password="testpass123")
+
+        response = self.client.get(reverse("reminder_detail", args=[reminder.pk]))
+
+        self.assertEqual(response.status_code, 404)

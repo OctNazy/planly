@@ -10,5 +10,6 @@ urlpatterns = [
     path("events/<int:pk>/edit/", views.event_update, name="event_update"),
     path("events/<int:pk>/delete/", views.event_delete, name="event_delete"),
     path("reminders/new/", views.reminder_create, name="reminder_create"),
+    path("reminders/<int:pk>/", views.reminder_detail, name="reminder_detail"),
     path("reminders/<int:pk>/done/", views.reminder_done, name="reminder_done"),
 ]
