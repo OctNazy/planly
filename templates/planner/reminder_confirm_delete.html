@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="form-card">
+    <h2>Delete reminder?</h2>
+    <p>Are you sure you want to delete <strong>{{ reminder.title }}</strong>?</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="danger-button">Delete</button>
+        <a href="{% url 'reminder_detail' reminder.pk %}">Cancel</a>
+    </form>
+</section>
+{% endblock %}

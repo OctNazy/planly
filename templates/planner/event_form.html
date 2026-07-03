@@ -11,13 +11,22 @@
 
     <div class="form-head">
         {% if event %}
-            <p class="eyebrow">event</p>
-            <h2>Edit event</h2>
+            <div class="title-row">
+                <h2>Edit event</h2>
+                <details class="info-popover">
+                    <summary aria-label="Event info">i</summary>
+                    <p>Events are plans with a start time and optional end time.</p>
+                </details>
+            </div>
         {% else %}
-            <p class="eyebrow">event</p>
-            <h2>New event</h2>
+            <div class="title-row">
+                <h2>New event</h2>
+                <details class="info-popover">
+                    <summary aria-label="Event info">i</summary>
+                    <p>Events are plans with a start time and optional end time.</p>
+                </details>
+            </div>
         {% endif %}
-        <p class="muted">Use events for plans with a start time and optional end time.</p>
     </div>
 
     <form method="post" class="plan-form">

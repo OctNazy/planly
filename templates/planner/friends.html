@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-head">
+    <div>
+        <div class="title-row">
+            <h2>Friends</h2>
+            <details class="info-popover">
+                <summary aria-label="Friends info">i</summary>
+                <p>Add people by username. Accepted friends will be used for shared plans later.</p>
+            </details>
+        </div>
+    </div>
+</section>
+
+<section class="form-card">
+    <h3>Add friend</h3>
+    <form method="post" action="{% url 'friend_request_create' %}" class="plan-form">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Send request</button>
+    </form>
+</section>
+
+<section class="list-section">
+    <div class="section-title">
+        <h3>Your friends</h3>
+    </div>
+
+    <section class="event-list">
+        {% for friend_request in sent_friends %}
+            <article class="friend-row">
+                <div>
+                    <h3>{{ friend_request.to_user.username }}</h3>
+                    <p class="muted">Friend</p>
+                </div>
+            </article>
+        {% endfor %}
+
+        {% for friend_request in received_friends %}
+            <article class="friend-row">
+                <div>
+                    <h3>{{ friend_request.from_user.username }}</h3>
+                    <p class="muted">Friend</p>
+                </div>
+            </article>
+        {% endfor %}
+
+        {% if not sent_friends and not received_friends %}
+            <section class="empty-state">
+                <h3>No friends yet</h3>
+                <p class="muted">Send a request by username.</p>
+            </section>
+        {% endif %}
+    </section>
+</section>
+
+<section class="list-section">
+    <div class="section-title">
+        <h3>Incoming requests</h3>
+    </div>
+
+    <section class="event-list">
+        {% for friend_request in incoming_requests %}
+            <article class="friend-row">
+                <div>
+                    <h3>{{ friend_request.from_user.username }}</h3>
+                    <p class="muted">Wants to add you</p>
+                </div>
+
+                <div class="friend-actions">
+                    <form method="post" action="{% url 'friend_request_accept' friend_request.pk %}">
+                        {% csrf_token %}
+                        <button type="submit">Accept</button>
+                    </form>
+                    <form method="post" action="{% url 'friend_request_reject' friend_request.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="secondary-button">Reject</button>
+                    </form>
+                </div>
+            </article>
+        {% empty %}
+            <section class="empty-state">
+                <p class="muted">No incoming requests.</p>
+            </section>
+        {% endfor %}
+    </section>
+</section>
+
+<section class="list-section">
+    <div class="section-title">
+        <h3>Sent requests</h3>
+    </div>
+
+    <section class="event-list">
+        {% for friend_request in outgoing_requests %}
+            <article class="friend-row">
+                <div>
+                    <h3>{{ friend_request.to_user.username }}</h3>
+                    <p class="muted">Waiting for answer</p>
+                </div>
+            </article>
+        {% empty %}
+            <section class="empty-state">
+                <p class="muted">No sent requests.</p>
+            </section>
+        {% endfor %}
+    </section>
+</section>
+{% endblock %}

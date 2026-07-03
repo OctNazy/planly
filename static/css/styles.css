@@ -37,7 +37,7 @@ a:hover {
     width: min(100%, 430px);
     min-height: 100vh;
     margin: 0 auto;
-    padding: 18px 14px 20px;
+    padding: 18px 14px 96px;
     background: var(--paper);
 }
 
@@ -239,6 +239,36 @@ h3 {
     background: #e3e8d7;
 }
 
+.friend-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: white;
+}
+
+.friend-row p {
+    margin-bottom: 0;
+}
+
+.friend-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.friend-actions form {
+    margin: 0;
+}
+
+.friend-actions button {
+    width: auto;
+    padding: 7px 9px;
+    font-size: 13px;
+}
+
 .done-form {
     margin: 0;
 }
@@ -295,8 +325,59 @@ h3 {
     margin-bottom: 16px;
 }
 
-.form-head p:last-child {
+.title-row {
+    position: relative;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.title-row h2 {
     margin-bottom: 0;
+}
+
+.info-popover {
+    position: relative;
+    flex: 0 0 auto;
+}
+
+.info-popover summary {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    margin-top: 3px;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    list-style: none;
+}
+
+.info-popover summary::-webkit-details-marker {
+    display: none;
+}
+
+.info-popover[open] summary {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.info-popover p {
+    position: absolute;
+    right: 0;
+    z-index: 20;
+    width: 230px;
+    margin: 8px 0 0;
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: white;
+    color: var(--text);
+    box-shadow: 0 10px 25px rgba(42, 35, 25, 0.14);
+    font-size: 14px;
 }
 
 .description {
@@ -340,6 +421,16 @@ button {
     color: white;
     font: inherit;
     cursor: pointer;
+}
+
+.secondary-button {
+    border: 1px solid var(--line);
+    background: white;
+    color: var(--text);
+}
+
+.secondary-button:hover {
+    background: var(--paper-soft);
 }
 
 button {
@@ -426,31 +517,46 @@ textarea:focus {
 }
 
 .bottom-nav {
-    position: sticky;
-    bottom: 12px;
-    z-index: 10;
+    position: fixed;
+    left: 50%;
+    bottom: 14px;
+    z-index: 30;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, 1fr);
     gap: 8px;
-    margin-top: 24px;
+    width: min(calc(100% - 28px), 398px);
+    margin: 0;
     padding: 8px;
     border: 1px solid var(--line);
     border-radius: 18px;
     background: rgba(255, 250, 242, 0.96);
+    box-shadow: 0 10px 28px rgba(42, 35, 25, 0.16);
+    transform: translateX(-50%);
 }
 
 .bottom-nav a,
 .bottom-nav span {
-    display: block;
+    display: grid;
+    place-items: center;
+    min-height: 46px;
     padding: 10px 12px;
     border-radius: 12px;
     color: var(--text);
-    text-align: center;
 }
 
 .bottom-nav .active {
     background: var(--accent);
     color: white;
+}
+
+.bottom-nav svg {
+    width: 24px;
+    height: 24px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .errorlist {

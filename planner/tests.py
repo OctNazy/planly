@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 from django.urls import reverse
 
-from .models import Event, Reminder
+from .models import Event, FriendRequest, Reminder
 
 
 class EventViewsTests(TestCase):
@@ -118,3 +118,141 @@ class EventViewsTests(TestCase):
         response = self.client.get(reverse("reminder_detail", args=[reminder.pk]))
 
         self.assertEqual(response.status_code, 404)
+
+    def test_user_can_edit_own_reminder(self):
+        reminder = Reminder.objects.create(
+            owner=self.user,
+            title="Pay internet",
+            remind_date="2026-07-12",
+        )
+        self.client.login(username="nazar", password="testpass123")
+
+        response = self.client.post(
+            reverse("reminder_update", args=[reminder.pk]),
+            {
+                "title": "Pay rent",
+                "note": "Before evening",
+                "remind_date": "2026-07-13",
+                "remind_time": "12:00",
+                "repeat": Reminder.Repeat.NONE,
+                "remove_mode": Reminder.RemoveMode.KEEP_UNTIL_DONE,
+            },
+        )
+        reminder.refresh_from_db()
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(reminder.title, "Pay rent")
+        self.assertEqual(reminder.note, "Before evening")
+
+    def test_user_cannot_edit_other_user_reminder(self):
+        reminder = Reminder.objects.create(
+            owner=self.other_user,
+            title="Private reminder",
+            remind_date="2026-07-12",
+        )
+        self.client.login(username="nazar", password="testpass123")
+
+        response = self.client.post(
+            reverse("reminder_update", args=[reminder.pk]),
+            {
+                "title": "Changed title",
+                "note": "",
+                "remind_date": "2026-07-13",
+                "remind_time": "",
+                "repeat": Reminder.Repeat.NONE,
+                "remove_mode": Reminder.RemoveMode.KEEP_UNTIL_DONE,
+            },
+        )
+        reminder.refresh_from_db()
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(reminder.title, "Private reminder")
+
+    def test_reminder_delete_requires_post(self):
+        reminder = Reminder.objects.create(
+            owner=self.user,
+            title="Pay internet",
+            remind_date="2026-07-12",
+        )
+        self.client.login(username="nazar", password="testpass123")
+
+        response = self.client.get(reverse("reminder_delete", args=[reminder.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(Reminder.objects.filter(pk=reminder.pk).exists())
+
+    def test_user_can_delete_own_reminder(self):
+        reminder = Reminder.objects.create(
+            owner=self.user,
+            title="Pay internet",
+            remind_date="2026-07-12",
+        )
+        self.client.login(username="nazar", password="testpass123")
+
+        response = self.client.post(reverse("reminder_delete", args=[reminder.pk]))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Reminder.objects.filter(pk=reminder.pk).exists())
+
+    def test_user_can_send_friend_request(self):
+        self.client.login(username="nazar", password="testpass123")
+
+        response = self.client.post(
+            reverse("friend_request_create"),
+            {"username": "friend"},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(
+            FriendRequest.objects.filter(
+                from_user=self.user,
+                to_user=self.other_user,
+                status=FriendRequest.Status.PENDING,
+            ).exists()
+        )
+
+    def test_user_cannot_send_friend_request_to_self(self):
+        self.client.login(username="nazar", password="testpass123")
+
+        response = self.client.post(
+            reverse("friend_request_create"),
+            {"username": "nazar"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(FriendRequest.objects.exists())
+        self.assertContains(response, "You cannot add yourself.")
+
+    def test_user_can_accept_incoming_friend_request(self):
+        friend_request = FriendRequest.objects.create(
+            from_user=self.other_user,
+            to_user=self.user,
+        )
+        self.client.login(username="nazar", password="testpass123")
+
+        response = self.client.post(
+            reverse("friend_request_accept", args=[friend_request.pk])
+        )
+        friend_request.refresh_from_db()
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(friend_request.status, FriendRequest.Status.ACCEPTED)
+
+    def test_user_cannot_accept_other_user_friend_request(self):
+        third_user = User.objects.create_user(
+            username="third",
+            password="testpass123",
+        )
+        friend_request = FriendRequest.objects.create(
+            from_user=self.other_user,
+            to_user=third_user,
+        )
+        self.client.login(username="nazar", password="testpass123")
+
+        response = self.client.post(
+            reverse("friend_request_accept", args=[friend_request.pk])
+        )
+        friend_request.refresh_from_db()
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(friend_request.status, FriendRequest.Status.PENDING)

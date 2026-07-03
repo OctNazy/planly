@@ -41,6 +41,8 @@
 </article>
 
 <section class="actions">
+    <a href="{% url 'reminder_update' reminder.pk %}" class="button-link">Edit</a>
+    <a href="{% url 'reminder_delete' reminder.pk %}" class="danger-link">Delete</a>
     {% if not reminder.is_done %}
         <form method="post" action="{% url 'reminder_done' reminder.pk %}" class="done-form">
             {% csrf_token %}

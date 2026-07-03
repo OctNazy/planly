@@ -51,3 +51,10 @@ class ReminderForm(forms.ModelForm):
             "repeat",
             "remove_mode",
         ]
+
+
+class FriendRequestForm(forms.Form):
+    username = forms.CharField(
+        label="Friend username",
+        max_length=150,
+    )

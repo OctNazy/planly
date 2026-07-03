@@ -3,9 +3,13 @@
 {% block content %}
 <section class="page-head">
     <div>
-        <p class="eyebrow">upcoming</p>
-        <h2>Your plans</h2>
-        <p class="muted">Events have time ranges. Reminders stay private.</p>
+        <div class="title-row">
+            <h2>Your plans</h2>
+            <details class="info-popover">
+                <summary aria-label="Plans info">i</summary>
+                <p>Events have time ranges. Reminders stay private.</p>
+            </details>
+        </div>
     </div>
     <a href="{% url 'event_create' %}" class="round-action">+</a>
 </section>

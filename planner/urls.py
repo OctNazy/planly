@@ -11,5 +11,19 @@ urlpatterns = [
     path("events/<int:pk>/delete/", views.event_delete, name="event_delete"),
     path("reminders/new/", views.reminder_create, name="reminder_create"),
     path("reminders/<int:pk>/", views.reminder_detail, name="reminder_detail"),
+    path("reminders/<int:pk>/edit/", views.reminder_update, name="reminder_update"),
+    path("reminders/<int:pk>/delete/", views.reminder_delete, name="reminder_delete"),
     path("reminders/<int:pk>/done/", views.reminder_done, name="reminder_done"),
+    path("friends/", views.friends, name="friends"),
+    path("friends/add/", views.friend_request_create, name="friend_request_create"),
+    path(
+        "friends/requests/<int:pk>/accept/",
+        views.friend_request_accept,
+        name="friend_request_accept",
+    ),
+    path(
+        "friends/requests/<int:pk>/reject/",
+        views.friend_request_reject,
+        name="friend_request_reject",
+    ),
 ]
