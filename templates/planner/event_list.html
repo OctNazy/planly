@@ -14,9 +14,47 @@
     <a href="{% url 'event_create' %}" class="round-action">+</a>
 </section>
 
+{% if pending_event_invites %}
+    <section class="list-section">
+        <div class="section-title">
+            <h3>Invites</h3>
+        </div>
+
+        <section class="event-list">
+            {% for invite in pending_event_invites %}
+                <article class="invite-row">
+                    <div class="date-box">
+                        <span>{{ invite.event.start_at|date:"d" }}</span>
+                        <small>{{ invite.event.start_at|date:"M" }}</small>
+                    </div>
+
+                    <div class="event-info">
+                        <p class="event-time">From {{ invite.event.owner.username }}</p>
+                        <h3>{{ invite.event.title }}</h3>
+                        {% if invite.event.location %}
+                            <p class="muted">{{ invite.event.location }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="friend-actions">
+                        <form method="post" action="{% url 'event_invite_accept' invite.pk %}">
+                            {% csrf_token %}
+                            <button type="submit">Join</button>
+                        </form>
+                        <form method="post" action="{% url 'event_invite_decline' invite.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="secondary-button">No</button>
+                        </form>
+                    </div>
+                </article>
+            {% endfor %}
+        </section>
+    </section>
+{% endif %}
+
 <section class="list-section">
     <div class="section-title">
-        <h3>Events</h3>
+        <h3>Your events</h3>
         <a href="{% url 'event_create' %}">Add event</a>
     </div>
 
@@ -43,6 +81,37 @@
                 <h3>No events yet</h3>
                 <p class="muted">Create an event with start and end time.</p>
                 <a href="{% url 'event_create' %}" class="button-link">Create event</a>
+            </section>
+        {% endfor %}
+    </section>
+</section>
+
+<section class="list-section">
+    <div class="section-title">
+        <h3>Shared with you</h3>
+    </div>
+
+    <section class="event-list">
+        {% for event in shared_events %}
+            <a href="{% url 'event_detail' event.pk %}" class="event-row">
+                <div class="date-box shared-date">
+                    <span>{{ event.start_at|date:"d" }}</span>
+                    <small>{{ event.start_at|date:"M" }}</small>
+                </div>
+
+                <div class="event-info">
+                    <p class="event-time">{{ event.start_at|date:"H:i" }} · {{ event.owner.username }}</p>
+                    <h3>{{ event.title }}</h3>
+                    {% if event.location %}
+                        <p class="muted">{{ event.location }}</p>
+                    {% endif %}
+                </div>
+
+                <span class="tag">Shared</span>
+            </a>
+        {% empty %}
+            <section class="empty-state">
+                <p class="muted">No shared events yet.</p>
             </section>
         {% endfor %}
     </section>

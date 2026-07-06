@@ -171,6 +171,17 @@ h3 {
     color: var(--text);
 }
 
+.invite-row {
+    display: grid;
+    grid-template-columns: 54px 1fr;
+    gap: 12px;
+    align-items: center;
+    padding: 11px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: white;
+}
+
 .event-row:hover {
     border-color: #b9a68f;
     text-decoration: none;
@@ -239,6 +250,10 @@ h3 {
     background: #e3e8d7;
 }
 
+.shared-date {
+    background: #dde7e0;
+}
+
 .friend-row {
     display: flex;
     justify-content: space-between;
@@ -257,6 +272,7 @@ h3 {
 .friend-actions {
     display: flex;
     gap: 8px;
+    grid-column: 1 / -1;
 }
 
 .friend-actions form {

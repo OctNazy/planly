@@ -30,6 +30,42 @@ class Event(models.Model):
         return self.title
 
 
+class EventInvite(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        ACCEPTED = "accepted", "Accepted"
+        DECLINED = "declined", "Declined"
+
+    event = models.ForeignKey(
+        Event,
+        on_delete=models.CASCADE,
+        related_name="invites",
+    )
+    invited_user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="event_invites",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["event", "invited_user"],
+                name="unique_event_invite",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.event} -> {self.invited_user}"
+
+
 class Reminder(models.Model):
     class Repeat(models.TextChoices):
         NONE = "none", "No repeat"

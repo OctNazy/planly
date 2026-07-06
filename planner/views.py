@@ -1,16 +1,25 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .forms import EventForm, FriendRequestForm, ReminderForm
-from .models import Event, FriendRequest, Reminder
+from .models import Event, EventInvite, FriendRequest, Reminder
 
 
 @login_required
 def event_list(request):
     events = Event.objects.filter(owner=request.user).order_by("start_at")
+    shared_events = Event.objects.filter(
+        invites__invited_user=request.user,
+        invites__status=EventInvite.Status.ACCEPTED,
+    ).select_related("owner").order_by("start_at")
+    pending_event_invites = EventInvite.objects.filter(
+        invited_user=request.user,
+        status=EventInvite.Status.PENDING,
+    ).select_related("event", "event__owner").order_by("event__start_at")
     reminders = Reminder.objects.filter(
         owner=request.user,
         is_done=False,
@@ -30,6 +39,8 @@ def event_list(request):
         "planner/event_list.html",
         {
             "events": events,
+            "shared_events": shared_events,
+            "pending_event_invites": pending_event_invites,
             "reminders": reminders,
         },
     )
@@ -37,22 +48,43 @@ def event_list(request):
 
 @login_required
 def event_detail(request, pk):
-    event = get_object_or_404(Event, pk=pk, owner=request.user)
-    return render(request, "planner/event_detail.html", {"event": event})
+    event = get_object_or_404(
+        Event.objects.select_related("owner").filter(
+            Q(owner=request.user)
+            | Q(
+                invites__invited_user=request.user,
+                invites__status=EventInvite.Status.ACCEPTED,
+            )
+        ),
+        pk=pk,
+    )
+    event_invites = event.invites.select_related("invited_user").order_by(
+        "invited_user__username",
+    )
+    return render(
+        request,
+        "planner/event_detail.html",
+        {
+            "event": event,
+            "event_invites": event_invites,
+            "is_owner": event.owner_id == request.user.id,
+        },
+    )
 
 
 @login_required
 def event_create(request):
     if request.method == "POST":
-        form = EventForm(request.POST)
+        form = EventForm(request.POST, user=request.user)
 
         if form.is_valid():
             event = form.save(commit=False)
             event.owner = request.user
             event.save()
+            sync_event_invites(event, form.cleaned_data["invited_friends"])
             return redirect("event_detail", pk=event.pk)
     else:
-        form = EventForm()
+        form = EventForm(user=request.user)
 
     return render(request, "planner/event_form.html", {"form": form})
 
@@ -62,13 +94,14 @@ def event_update(request, pk):
     event = get_object_or_404(Event, pk=pk, owner=request.user)
 
     if request.method == "POST":
-        form = EventForm(request.POST, instance=event)
+        form = EventForm(request.POST, instance=event, user=request.user)
 
         if form.is_valid():
-            form.save()
+            event = form.save()
+            sync_event_invites(event, form.cleaned_data["invited_friends"])
             return redirect("event_detail", pk=event.pk)
     else:
-        form = EventForm(instance=event)
+        form = EventForm(instance=event, user=request.user)
 
     return render(
         request,
@@ -89,6 +122,24 @@ def event_delete(request, pk):
         return redirect("event_list")
 
     return render(request, "planner/event_confirm_delete.html", {"event": event})
+
+
+def sync_event_invites(event, invited_friends):
+    selected_ids = {friend.id for friend in invited_friends}
+
+    EventInvite.objects.filter(event=event).exclude(
+        invited_user_id__in=selected_ids,
+    ).delete()
+
+    for friend in invited_friends:
+        invite, created = EventInvite.objects.get_or_create(
+            event=event,
+            invited_user=friend,
+        )
+
+        if not created and invite.status == EventInvite.Status.DECLINED:
+            invite.status = EventInvite.Status.PENDING
+            invite.save()
 
 
 @login_required
@@ -258,3 +309,31 @@ def friend_request_reject(request, pk):
     friend_request.status = FriendRequest.Status.REJECTED
     friend_request.save()
     return redirect("friends")
+
+
+@login_required
+@require_POST
+def event_invite_accept(request, pk):
+    invite = get_object_or_404(
+        EventInvite,
+        pk=pk,
+        invited_user=request.user,
+        status=EventInvite.Status.PENDING,
+    )
+    invite.status = EventInvite.Status.ACCEPTED
+    invite.save()
+    return redirect("event_detail", pk=invite.event.pk)
+
+
+@login_required
+@require_POST
+def event_invite_decline(request, pk):
+    invite = get_object_or_404(
+        EventInvite,
+        pk=pk,
+        invited_user=request.user,
+        status=EventInvite.Status.PENDING,
+    )
+    invite.status = EventInvite.Status.DECLINED
+    invite.save()
+    return redirect("event_list")

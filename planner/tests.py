@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 from django.urls import reverse
 
-from .models import Event, FriendRequest, Reminder
+from .models import Event, EventInvite, FriendRequest, Reminder
 
 
 class EventViewsTests(TestCase):
@@ -56,6 +56,75 @@ class EventViewsTests(TestCase):
         response = self.client.get(reverse("event_detail", args=[event.pk]))
 
         self.assertEqual(response.status_code, 404)
+
+    def test_owner_can_invite_friend_when_creating_event(self):
+        FriendRequest.objects.create(
+            from_user=self.user,
+            to_user=self.other_user,
+            status=FriendRequest.Status.ACCEPTED,
+        )
+        self.client.login(username="nazar", password="testpass123")
+
+        response = self.client.post(
+            reverse("event_create"),
+            {
+                "title": "Pizza night",
+                "description": "Friday plan",
+                "start_at": "2026-07-10T18:00",
+                "end_at": "",
+                "location": "City center",
+                "visibility": Event.Visibility.INVITE_ONLY,
+                "invited_friends": [self.other_user.id],
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(
+            EventInvite.objects.filter(
+                event__owner=self.user,
+                event__title="Pizza night",
+                invited_user=self.other_user,
+                status=EventInvite.Status.PENDING,
+            ).exists()
+        )
+
+    def test_invited_user_can_accept_event_invite(self):
+        event = Event.objects.create(
+            owner=self.user,
+            title="Pizza night",
+            start_at="2026-07-10T18:00Z",
+            visibility=Event.Visibility.INVITE_ONLY,
+        )
+        invite = EventInvite.objects.create(
+            event=event,
+            invited_user=self.other_user,
+        )
+        self.client.login(username="friend", password="testpass123")
+
+        response = self.client.post(reverse("event_invite_accept", args=[invite.pk]))
+        invite.refresh_from_db()
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(invite.status, EventInvite.Status.ACCEPTED)
+
+    def test_invited_user_can_open_accepted_event(self):
+        event = Event.objects.create(
+            owner=self.user,
+            title="Pizza night",
+            start_at="2026-07-10T18:00Z",
+            visibility=Event.Visibility.INVITE_ONLY,
+        )
+        EventInvite.objects.create(
+            event=event,
+            invited_user=self.other_user,
+            status=EventInvite.Status.ACCEPTED,
+        )
+        self.client.login(username="friend", password="testpass123")
+
+        response = self.client.get(reverse("event_detail", args=[event.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Pizza night")
 
     def test_user_can_create_reminder(self):
         self.client.login(username="nazar", password="testpass123")

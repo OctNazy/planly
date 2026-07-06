@@ -4,6 +4,7 @@
 <article class="detail-card">
     <p class="event-time">{{ event.start_at|date:"l, M d, H:i" }}</p>
     <h2>{{ event.title }}</h2>
+    <p class="muted">Created by {{ event.owner.username }}</p>
 
     {% if event.description %}
         <p class="description">{{ event.description }}</p>
@@ -28,12 +29,25 @@
             <dt>Visibility</dt>
             <dd>{{ event.get_visibility_display }}</dd>
         </div>
+
+        {% if is_owner and event_invites %}
+            <div>
+                <dt>Invited</dt>
+                <dd>
+                    {% for invite in event_invites %}
+                        {{ invite.invited_user.username }} - {{ invite.get_status_display }}{% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                </dd>
+            </div>
+        {% endif %}
     </dl>
 </article>
 
 <section class="actions">
-    <a href="{% url 'event_update' event.pk %}" class="button-link">Edit</a>
-    <a href="{% url 'event_delete' event.pk %}" class="danger-link">Delete</a>
+    {% if is_owner %}
+        <a href="{% url 'event_update' event.pk %}" class="button-link">Edit</a>
+        <a href="{% url 'event_delete' event.pk %}" class="danger-link">Delete</a>
+    {% endif %}
     <a href="{% url 'event_list' %}">Back</a>
 </section>
 {% endblock %}
