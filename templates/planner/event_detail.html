@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
+<section class="screen-top">
+    <h2>Event</h2>
+</section>
+
 <article class="detail-card">
     <p class="event-time">{{ event.start_at|date:"l, M d, H:i" }}</p>
     <h2>{{ event.title }}</h2>

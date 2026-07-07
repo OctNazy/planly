@@ -1,6 +1,19 @@
 {% extends "base.html" %}
 
 {% block content %}
+<section class="screen-top">
+    {% if event %}
+        <h2>Edit event</h2>
+    {% else %}
+        <h2>New event</h2>
+    {% endif %}
+
+    <details class="info-popover">
+        <summary aria-label="Event info">i</summary>
+        <p>Events are plans with a start time and optional end time.</p>
+    </details>
+</section>
+
 <section class="form-card">
     {% if not event %}
         <div class="create-tabs">
@@ -8,26 +21,6 @@
             <a href="{% url 'reminder_create' %}">Reminder</a>
         </div>
     {% endif %}
-
-    <div class="form-head">
-        {% if event %}
-            <div class="title-row">
-                <h2>Edit event</h2>
-                <details class="info-popover">
-                    <summary aria-label="Event info">i</summary>
-                    <p>Events are plans with a start time and optional end time.</p>
-                </details>
-            </div>
-        {% else %}
-            <div class="title-row">
-                <h2>New event</h2>
-                <details class="info-popover">
-                    <summary aria-label="Event info">i</summary>
-                    <p>Events are plans with a start time and optional end time.</p>
-                </details>
-            </div>
-        {% endif %}
-    </div>
 
     <form method="post" class="plan-form">
         {% csrf_token %}

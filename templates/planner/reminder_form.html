@@ -1,6 +1,19 @@
 {% extends "base.html" %}
 
 {% block content %}
+<section class="screen-top">
+    {% if reminder %}
+        <h2>Edit reminder</h2>
+    {% else %}
+        <h2>New reminder</h2>
+    {% endif %}
+
+    <details class="info-popover">
+        <summary aria-label="Reminder info">i</summary>
+        <p>Reminders are private. Use them for birthdays, calls, payments, or small tasks.</p>
+    </details>
+</section>
+
 <section class="form-card">
     {% if not reminder %}
         <div class="create-tabs">
@@ -8,20 +21,6 @@
             <span class="active">Reminder</span>
         </div>
     {% endif %}
-
-    <div class="form-head">
-        <div class="title-row">
-            {% if reminder %}
-                <h2>Edit reminder</h2>
-            {% else %}
-                <h2>New reminder</h2>
-            {% endif %}
-            <details class="info-popover">
-                <summary aria-label="Reminder info">i</summary>
-                <p>Reminders are private. Use them for birthdays, calls, payments, or small tasks.</p>
-            </details>
-        </div>
-    </div>
 
     <form method="post" class="plan-form">
         {% csrf_token %}

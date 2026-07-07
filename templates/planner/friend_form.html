@@ -2,21 +2,18 @@
 
 {% block content %}
 <section class="screen-top">
-    <h2>Log in</h2>
+    <h2>Add friend</h2>
 </section>
 
 <section class="form-card">
-    <p class="muted">Open your calendar and manage your plans.</p>
-
-    <form method="post">
+    <form method="post" action="{% url 'friend_request_create' %}" class="plan-form">
         {% csrf_token %}
         {{ form.as_p }}
-        <button type="submit">Log in</button>
+        <button type="submit">Send request</button>
     </form>
 </section>
 
 <p class="bottom-text">
-    No account yet?
-    <a href="{% url 'register' %}">Create one</a>
+    <a href="{% url 'friends' %}">Back to friends</a>
 </p>
 {% endblock %}

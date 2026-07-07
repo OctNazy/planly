@@ -1,8 +1,11 @@
 {% extends "base.html" %}
 
 {% block content %}
+<section class="screen-top">
+    <h2>Delete reminder</h2>
+</section>
+
 <section class="form-card">
-    <h2>Delete reminder?</h2>
     <p>Are you sure you want to delete <strong>{{ reminder.title }}</strong>?</p>
 
     <form method="post">

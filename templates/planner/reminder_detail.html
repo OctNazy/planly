@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
+<section class="screen-top">
+    <h2>Reminder</h2>
+</section>
+
 <article class="detail-card">
     <p class="event-time">
         {{ reminder.remind_date|date:"l, M d" }}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="screen-top">
+    <h2>Settings</h2>
+</section>
+
+<section class="detail-card">
+    <h3>Profile</h3>
+    <div class="profile-preview">
+        {% if profile.avatar %}
+            <img src="{{ profile.avatar.url }}" alt="{{ user.username }} avatar">
+        {% else %}
+            <div class="avatar-placeholder">
+                {{ user.username|first|upper }}
+            </div>
+        {% endif %}
+    </div>
+
+    <dl class="details">
+        <div>
+            <dt>Username</dt>
+            <dd>{{ user.username }}</dd>
+        </div>
+
+        <div>
+            <dt>Email</dt>
+            <dd>{{ user.email|default:"Not set" }}</dd>
+        </div>
+    </dl>
+</section>
+
+<section class="form-card">
+    <h3>Avatar</h3>
+    <form method="post" enctype="multipart/form-data" class="plan-form">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Save avatar</button>
+    </form>
+</section>
+
+<section class="actions">
+    <form method="post" action="{% url 'logout' %}" class="logout-form">
+        {% csrf_token %}
+        <button type="submit" class="secondary-button">Log out</button>
+    </form>
+</section>
+{% endblock %}

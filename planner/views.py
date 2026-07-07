@@ -5,12 +5,57 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from accounts.forms import ProfileForm
+from accounts.models import Profile
 from .forms import EventForm, FriendRequestForm, ReminderForm
 from .models import Event, EventInvite, FriendRequest, Reminder
 
 
+def home_header(user):
+    current_hour = timezone.localtime().hour
+
+    if 5 <= current_hour < 12:
+        icon = "☀️"
+        greetings = [
+            "Good morning",
+            "Morning",
+            "Start the day",
+        ]
+    elif 12 <= current_hour < 18:
+        icon = "🌤️"
+        greetings = [
+            "Good afternoon",
+            "Hey",
+            "Hope your day is going well",
+        ]
+    elif 18 <= current_hour < 23:
+        icon = "🌙"
+        greetings = [
+            "Good evening",
+            "Evening",
+            "Time to check the plans",
+        ]
+    else:
+        icon = "✨"
+        greetings = [
+            "Still planning",
+            "Late night plans",
+            "Quiet night",
+        ]
+
+    day_number = timezone.localdate().toordinal()
+    greeting = greetings[(day_number + user.id) % len(greetings)]
+    return {
+        "greeting": f"{greeting}, {user.username}!",
+        "greeting_icon": icon,
+        "today": timezone.localdate().strftime("%B %-d, %A"),
+    }
+
+
 @login_required
 def event_list(request):
+    profile, _created = Profile.objects.get_or_create(user=request.user)
+    home = home_header(request.user)
     events = Event.objects.filter(owner=request.user).order_by("start_at")
     shared_events = Event.objects.filter(
         invites__invited_user=request.user,
@@ -39,11 +84,25 @@ def event_list(request):
         "planner/event_list.html",
         {
             "events": events,
+            "greeting": home["greeting"],
+            "greeting_icon": home["greeting_icon"],
+            "today": home["today"],
+            "profile": profile,
             "shared_events": shared_events,
             "pending_event_invites": pending_event_invites,
             "reminders": reminders,
         },
     )
+
+
+@login_required
+def calendar(request):
+    return render(request, "planner/calendar.html")
+
+
+@login_required
+def notifications(request):
+    return render(request, "planner/notifications.html")
 
 
 @login_required
@@ -225,6 +284,29 @@ def friends(request):
     return render(request, "planner/friends.html", context)
 
 
+@login_required
+def settings(request):
+    profile, _created = Profile.objects.get_or_create(user=request.user)
+
+    if request.method == "POST":
+        form = ProfileForm(request.POST, request.FILES, instance=profile)
+
+        if form.is_valid():
+            form.save()
+            return redirect("settings")
+    else:
+        form = ProfileForm(instance=profile)
+
+    return render(
+        request,
+        "planner/settings.html",
+        {
+            "form": form,
+            "profile": profile,
+        },
+    )
+
+
 def friends_context(user, form=None):
     return {
         "form": form or FriendRequestForm(),
@@ -248,29 +330,30 @@ def friends_context(user, form=None):
 
 
 @login_required
-@require_POST
 def friend_request_create(request):
-    form = FriendRequestForm(request.POST)
+    if request.method == "POST":
+        form = FriendRequestForm(request.POST)
 
-    if form.is_valid():
-        username = form.cleaned_data["username"]
-        to_user = User.objects.filter(username=username).first()
+        if form.is_valid():
+            username = form.cleaned_data["username"]
+            to_user = User.objects.filter(username=username).first()
 
-        if to_user is None:
-            form.add_error("username", "User not found.")
-        elif to_user == request.user:
-            form.add_error("username", "You cannot add yourself.")
-        elif friend_request_exists(request.user, to_user):
-            form.add_error("username", "Friend request already exists.")
-        else:
-            FriendRequest.objects.create(
-                from_user=request.user,
-                to_user=to_user,
-            )
-            return redirect("friends")
+            if to_user is None:
+                form.add_error("username", "User not found.")
+            elif to_user == request.user:
+                form.add_error("username", "You cannot add yourself.")
+            elif friend_request_exists(request.user, to_user):
+                form.add_error("username", "Friend request already exists.")
+            else:
+                FriendRequest.objects.create(
+                    from_user=request.user,
+                    to_user=to_user,
+                )
+                return redirect("friends")
+    else:
+        form = FriendRequestForm()
 
-    context = friends_context(request.user, form)
-    return render(request, "planner/friends.html", context)
+    return render(request, "planner/friend_form.html", {"form": form})
 
 
 def friend_request_exists(user, other_user):
