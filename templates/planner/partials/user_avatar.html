@@ -1,0 +1,9 @@
+{% firstof class_name "user-avatar" as avatar_class %}
+
+{% if person.profile.avatar %}
+    <img src="{{ person.profile.avatar.url }}" alt="{{ person.username }} avatar" class="{{ avatar_class }}">
+{% else %}
+    <div class="{{ avatar_class }} avatar-placeholder">
+        {{ person.username|first|upper }}
+    </div>
+{% endif %}

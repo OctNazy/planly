@@ -22,9 +22,88 @@
         </div>
     {% endif %}
 
-    <form method="post" class="plan-form">
+    <form method="post" class="plan-form event-form" data-event-form>
         {% csrf_token %}
-        {{ form.as_p }}
+
+        <div class="field">
+            {{ form.title.label_tag }}
+            {{ form.title }}
+            {{ form.title.errors }}
+        </div>
+
+        <div class="field">
+            {{ form.description.label_tag }}
+            {{ form.description }}
+            {{ form.description.errors }}
+        </div>
+
+        <div class="field">
+            {{ form.start_at.label_tag }}
+            {{ form.start_at }}
+            {{ form.start_at.errors }}
+        </div>
+
+        <div class="field">
+            {{ form.end_at.label_tag }}
+            {{ form.end_at }}
+            {{ form.end_at.errors }}
+        </div>
+
+        <div class="field">
+            {{ form.location.label_tag }}
+            {{ form.location }}
+            {{ form.location.errors }}
+        </div>
+
+        <div class="field">
+            <label class="checkbox-row">
+                <input
+                    type="checkbox"
+                    name="{{ form.is_group.html_name }}"
+                    id="{{ form.is_group.id_for_label }}"
+                    data-group-checkbox
+                    {% if is_group_checked %}checked{% endif %}
+                >
+                <span>Group event</span>
+            </label>
+            {{ form.is_group.errors }}
+        </div>
+
+        <section class="group-panel" data-group-panel {% if not is_group_checked %}hidden{% endif %}>
+            <div class="selected-friends" data-selected-friends>
+                <button type="button" class="friend-plus" data-friend-plus aria-label="Add friends">
+                    +
+                </button>
+            </div>
+
+            <div class="friend-picker-list" data-friend-list hidden>
+                {% for friend in friend_choices %}
+                    <div
+                        class="friend-picker-row"
+                        data-friend-option
+                        data-username="{{ friend.username }}"
+                        data-initial="{{ friend.username|first|upper }}"
+                        data-avatar-url="{% if friend.profile.avatar %}{{ friend.profile.avatar.url }}{% endif %}"
+                    >
+                        <input
+                            type="checkbox"
+                            name="{{ form.invited_friends.html_name }}"
+                            value="{{ friend.id }}"
+                            {% if friend.id in selected_friend_ids %}checked{% endif %}
+                            hidden
+                        >
+                        {% include "planner/partials/user_avatar.html" with person=friend class_name="user-avatar" %}
+                        <span>{{ friend.username }}</span>
+                        <button type="button" class="friend-add-button">Add</button>
+                    </div>
+                {% empty %}
+                    <p class="muted">Add friends first, then you can invite them here.</p>
+                {% endfor %}
+            </div>
+
+            {{ form.invited_friends.errors }}
+        </section>
+
         <button type="submit">Save event</button>
     </form>
 </section>
@@ -32,4 +111,83 @@
 <p class="bottom-text">
     <a href="{% url 'event_list' %}">Back to plans</a>
 </p>
+
+<script>
+    (() => {
+        const form = document.querySelector("[data-event-form]");
+        if (!form) return;
+
+        const groupCheckbox = form.querySelector("[data-group-checkbox]");
+        const groupPanel = form.querySelector("[data-group-panel]");
+        const selectedFriends = form.querySelector("[data-selected-friends]");
+        const plusButton = form.querySelector("[data-friend-plus]");
+        const friendList = form.querySelector("[data-friend-list]");
+        const options = [...form.querySelectorAll("[data-friend-option]")];
+
+        function makeAvatar(option, input) {
+            const avatar = document.createElement("button");
+            avatar.type = "button";
+            avatar.className = "user-avatar selected-avatar";
+            avatar.title = `Remove ${option.dataset.username}`;
+
+            if (option.dataset.avatarUrl) {
+                avatar.style.backgroundImage = `url("${option.dataset.avatarUrl}")`;
+                avatar.textContent = "";
+            } else {
+                avatar.textContent = option.dataset.initial;
+            }
+
+            avatar.addEventListener("click", () => {
+                input.checked = false;
+                renderFriends();
+            });
+
+            return avatar;
+        }
+
+        function renderFriends() {
+            options.forEach((option) => {
+                const input = option.querySelector("input");
+                const button = option.querySelector(".friend-add-button");
+                button.disabled = input.checked;
+                button.textContent = input.checked ? "Added" : "Add";
+            });
+
+            selectedFriends.replaceChildren();
+
+            options.forEach((option) => {
+                const input = option.querySelector("input");
+                if (input.checked) {
+                    selectedFriends.append(makeAvatar(option, input));
+                }
+            });
+
+            selectedFriends.append(plusButton);
+        }
+
+        function syncGroupPanel() {
+            groupPanel.hidden = !groupCheckbox.checked;
+            if (!groupCheckbox.checked) {
+                friendList.hidden = true;
+            }
+        }
+
+        groupCheckbox.addEventListener("change", syncGroupPanel);
+        plusButton.addEventListener("click", () => {
+            friendList.hidden = !friendList.hidden;
+        });
+
+        options.forEach((option) => {
+            const input = option.querySelector("input");
+            const button = option.querySelector(".friend-add-button");
+            button.addEventListener("click", () => {
+                input.checked = true;
+                renderFriends();
+            });
+        });
+
+        syncGroupPanel();
+        renderFriends();
+    })();
+</script>
 {% endblock %}

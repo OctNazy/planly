@@ -6,9 +6,22 @@
 </section>
 
 <article class="detail-card">
-    <p class="event-time">{{ event.start_at|date:"l, M d, H:i" }}</p>
+    <p class="event-time">
+        {{ event.start_at|date:"l, M d, H:i" }}{% if event.end_at %}-{{ event.end_at|date:"H:i" }}{% endif %}
+    </p>
     <h2>{{ event.title }}</h2>
     <p class="muted">Created by {{ event.owner.username }}</p>
+
+    {% if participants|length > 1 %}
+        <div class="participants-block">
+            <p class="event-time">Participants</p>
+            <div class="avatar-stack">
+                {% for person in participants %}
+                    {% include "planner/partials/user_avatar.html" with person=person class_name="user-avatar avatar-stack-item" %}
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
 
     {% if event.description %}
         <p class="description">{{ event.description }}</p>

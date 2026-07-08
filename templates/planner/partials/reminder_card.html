@@ -1,0 +1,58 @@
+{% if calendar_mode %}
+    <article class="calendar-reminder-item">
+        <a href="{% url 'reminder_detail' reminder.pk %}" class="calendar-reminder-main">
+            <span class="calendar-plan-marker reminder-marker"></span>
+            <span class="calendar-plan-time">
+                {% if reminder.remind_time %}
+                    {{ reminder.remind_time|time:"H:i" }}
+                {% else %}
+                    All day
+                {% endif %}
+            </span>
+
+            <div class="calendar-plan-info">
+                <h3>{{ reminder.title }}</h3>
+                {% if reminder.note %}
+                    <p class="muted">{{ reminder.note }}</p>
+                {% endif %}
+                {% if reminder.repeat != "none" %}
+                    <p class="muted">Repeats {{ reminder.get_repeat_display|lower }}</p>
+                {% endif %}
+            </div>
+        </a>
+
+        <form method="post" action="{% url 'reminder_done' reminder.pk %}" class="done-form calendar-done-form">
+            {% csrf_token %}
+            <button type="submit" aria-label="Mark {{ reminder.title }} as done">Done</button>
+        </form>
+    </article>
+{% else %}
+    <article class="event-row reminder-row">
+        <a href="{% url 'reminder_detail' reminder.pk %}" class="reminder-link">
+            <div class="date-box reminder-date">
+                <span>{{ reminder.remind_date|date:"d" }}</span>
+                <small>{{ reminder.remind_date|date:"M" }}</small>
+            </div>
+
+            <div class="event-info">
+                {% if reminder.remind_time %}
+                    <p class="event-time">{{ reminder.remind_time|time:"H:i" }}</p>
+                {% else %}
+                    <p class="event-time">All day</p>
+                {% endif %}
+                <h3>{{ reminder.title }}</h3>
+                {% if reminder.note %}
+                    <p class="muted">{{ reminder.note }}</p>
+                {% endif %}
+                {% if reminder.repeat != "none" %}
+                    <p class="muted">Repeats: {{ reminder.get_repeat_display }}</p>
+                {% endif %}
+            </div>
+        </a>
+
+        <form method="post" action="{% url 'reminder_done' reminder.pk %}" class="done-form">
+            {% csrf_token %}
+            <button type="submit">Done</button>
+        </form>
+    </article>
+{% endif %}

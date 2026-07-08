@@ -3,13 +3,7 @@
 {% block content %}
 <section class="home-top">
     <div class="home-greeting">
-        {% if profile.avatar %}
-            <img src="{{ profile.avatar.url }}" alt="{{ user.username }} avatar">
-        {% else %}
-            <div class="avatar-placeholder">
-                {{ user.username|first|upper }}
-            </div>
-        {% endif %}
+        {% include "planner/partials/user_avatar.html" with person=user class_name="home-avatar" %}
         <div>
             <h2>{{ greeting }} {{ greeting_icon }}</h2>
             <p>{{ today }}</p>
@@ -24,44 +18,6 @@
     </a>
 </section>
 
-{% if pending_event_invites %}
-    <section class="list-section">
-        <div class="section-title">
-            <h3>Invites</h3>
-        </div>
-
-        <section class="event-list">
-            {% for invite in pending_event_invites %}
-                <article class="invite-row">
-                    <div class="date-box">
-                        <span>{{ invite.event.start_at|date:"d" }}</span>
-                        <small>{{ invite.event.start_at|date:"M" }}</small>
-                    </div>
-
-                    <div class="event-info">
-                        <p class="event-time">From {{ invite.event.owner.username }}</p>
-                        <h3>{{ invite.event.title }}</h3>
-                        {% if invite.event.location %}
-                            <p class="muted">{{ invite.event.location }}</p>
-                        {% endif %}
-                    </div>
-
-                    <div class="friend-actions">
-                        <form method="post" action="{% url 'event_invite_accept' invite.pk %}">
-                            {% csrf_token %}
-                            <button type="submit">Join</button>
-                        </form>
-                        <form method="post" action="{% url 'event_invite_decline' invite.pk %}">
-                            {% csrf_token %}
-                            <button type="submit" class="secondary-button">No</button>
-                        </form>
-                    </div>
-                </article>
-            {% endfor %}
-        </section>
-    </section>
-{% endif %}
-
 <section class="list-section">
     <div class="section-title">
         <h3>Your events</h3>
@@ -69,59 +25,13 @@
     </div>
 
     <section class="event-list">
-        {% for event in events %}
-            <a href="{% url 'event_detail' event.pk %}" class="event-row">
-                <div class="date-box">
-                    <span>{{ event.start_at|date:"d" }}</span>
-                    <small>{{ event.start_at|date:"M" }}</small>
-                </div>
-
-                <div class="event-info">
-                    <p class="event-time">{{ event.start_at|date:"H:i" }}</p>
-                    <h3>{{ event.title }}</h3>
-                    {% if event.location %}
-                        <p class="muted">{{ event.location }}</p>
-                    {% endif %}
-                </div>
-
-                <span class="tag">{{ event.get_visibility_display }}</span>
-            </a>
+        {% for card in event_cards %}
+            {% include "planner/partials/event_card.html" with card=card %}
         {% empty %}
             <section class="empty-state">
                 <h3>No events yet</h3>
                 <p class="muted">Create an event with start and end time.</p>
                 <a href="{% url 'event_create' %}" class="button-link">Create event</a>
-            </section>
-        {% endfor %}
-    </section>
-</section>
-
-<section class="list-section">
-    <div class="section-title">
-        <h3>Shared with you</h3>
-    </div>
-
-    <section class="event-list">
-        {% for event in shared_events %}
-            <a href="{% url 'event_detail' event.pk %}" class="event-row">
-                <div class="date-box shared-date">
-                    <span>{{ event.start_at|date:"d" }}</span>
-                    <small>{{ event.start_at|date:"M" }}</small>
-                </div>
-
-                <div class="event-info">
-                    <p class="event-time">{{ event.start_at|date:"H:i" }} · {{ event.owner.username }}</p>
-                    <h3>{{ event.title }}</h3>
-                    {% if event.location %}
-                        <p class="muted">{{ event.location }}</p>
-                    {% endif %}
-                </div>
-
-                <span class="tag">Shared</span>
-            </a>
-        {% empty %}
-            <section class="empty-state">
-                <p class="muted">No shared events yet.</p>
             </section>
         {% endfor %}
     </section>
@@ -135,34 +45,7 @@
 
     <section class="event-list">
         {% for reminder in reminders %}
-            <article class="event-row reminder-row">
-                <a href="{% url 'reminder_detail' reminder.pk %}" class="reminder-link">
-                    <div class="date-box reminder-date">
-                        <span>{{ reminder.remind_date|date:"d" }}</span>
-                        <small>{{ reminder.remind_date|date:"M" }}</small>
-                    </div>
-
-                    <div class="event-info">
-                        {% if reminder.remind_time %}
-                            <p class="event-time">{{ reminder.remind_time|time:"H:i" }}</p>
-                        {% else %}
-                            <p class="event-time">All day</p>
-                        {% endif %}
-                        <h3>{{ reminder.title }}</h3>
-                        {% if reminder.note %}
-                            <p class="muted">{{ reminder.note }}</p>
-                        {% endif %}
-                        {% if reminder.repeat != "none" %}
-                            <p class="muted">Repeats: {{ reminder.get_repeat_display }}</p>
-                        {% endif %}
-                    </div>
-                </a>
-
-                <form method="post" action="{% url 'reminder_done' reminder.pk %}" class="done-form">
-                    {% csrf_token %}
-                    <button type="submit">Done</button>
-                </form>
-            </article>
+            {% include "planner/partials/reminder_card.html" with reminder=reminder %}
         {% empty %}
             <section class="empty-state">
                 <h3>No reminders yet</h3>

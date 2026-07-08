@@ -1,0 +1,59 @@
+{% with event=card.event %}
+{% if calendar_mode %}
+    <a href="{% url 'event_detail' event.pk %}" class="calendar-plan-item">
+        <span class="calendar-plan-marker event-marker"></span>
+        <span class="calendar-plan-time">
+            {{ event.start_at|date:"H:i" }}{% if event.end_at %}-{{ event.end_at|date:"H:i" }}{% endif %}
+        </span>
+
+        <div class="calendar-plan-info">
+            <h3>{{ event.title }}</h3>
+            {% if event.location %}
+                <p class="muted">{{ event.location }}</p>
+            {% endif %}
+
+            {% if card.is_group %}
+                <div class="avatar-stack">
+                    {% for person in card.participants %}
+                        {% include "planner/partials/user_avatar.html" with person=person class_name="user-avatar avatar-stack-item" %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </a>
+{% else %}
+    <a href="{% url 'event_detail' event.pk %}" class="event-row">
+        <div class="date-box">
+            <span>{{ event.start_at|date:"d" }}</span>
+            <small>{{ event.start_at|date:"M" }}</small>
+        </div>
+
+        <div class="event-info">
+            <p class="event-time">
+                {{ event.start_at|date:"H:i" }}{% if event.end_at %}-{{ event.end_at|date:"H:i" }}{% endif %}
+                {% if event.owner != user %}
+                    · {{ event.owner.username }}
+                {% endif %}
+            </p>
+            <h3>{{ event.title }}</h3>
+            {% if event.location %}
+                <p class="muted">{{ event.location }}</p>
+            {% endif %}
+
+            {% if card.is_group %}
+                <div class="avatar-stack">
+                    {% for person in card.participants %}
+                        {% include "planner/partials/user_avatar.html" with person=person class_name="user-avatar avatar-stack-item" %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        {% if card.is_group %}
+            <span class="tag">Group</span>
+        {% else %}
+            <span class="tag">Private</span>
+        {% endif %}
+    </a>
+{% endif %}
+{% endwith %}

@@ -19,6 +19,11 @@ def accepted_friend_queryset(user):
 
 
 class EventForm(forms.ModelForm):
+    is_group = forms.BooleanField(
+        label="Group event",
+        required=False,
+        help_text="Turn this on to invite friends.",
+    )
     invited_friends = forms.ModelMultipleChoiceField(
         label="Invite friends",
         queryset=User.objects.none(),
@@ -46,12 +51,29 @@ class EventForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         if user is not None:
-            self.fields["invited_friends"].queryset = accepted_friend_queryset(user)
+            self.fields["invited_friends"].queryset = accepted_friend_queryset(
+                user
+            ).select_related("profile")
 
         if self.instance.pk:
-            self.fields["invited_friends"].initial = self.instance.invites.exclude(
+            active_invites = self.instance.invites.exclude(
                 status=EventInvite.Status.DECLINED,
-            ).values_list("invited_user_id", flat=True)
+            )
+            self.fields["is_group"].initial = active_invites.exists()
+            self.fields["invited_friends"].initial = active_invites.values_list(
+                "invited_user_id",
+                flat=True,
+            )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_at = cleaned_data.get("start_at")
+        end_at = cleaned_data.get("end_at")
+
+        if start_at and end_at and end_at <= start_at:
+            self.add_error("end_at", "End time must be after start time.")
+
+        return cleaned_data
 
     class Meta:
         model = Event
@@ -61,7 +83,7 @@ class EventForm(forms.ModelForm):
             "start_at",
             "end_at",
             "location",
-            "visibility",
+            "is_group",
             "invited_friends",
         ]
 

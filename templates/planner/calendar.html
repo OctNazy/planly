@@ -1,12 +1,163 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="screen-top">
-    <h2>Calendar</h2>
+<section class="calendar-sticky-head">
+    <div class="calendar-year-row">
+        <h2 id="calendar-year">{{ calendar_year }}</h2>
+    </div>
+    <div class="calendar-grid calendar-weekdays">
+        {% for weekday in weekdays %}
+            <span>{{ weekday }}</span>
+        {% endfor %}
+    </div>
 </section>
 
-<section class="empty-state">
-    <h3>Calendar view is next</h3>
-    <p class="muted">This page will show events in a calendar layout instead of the current list.</p>
+<section class="calendar-scroll">
+    {% for month in calendar_months %}
+        <section
+            class="calendar-card"
+            data-calendar-month
+            data-year="{{ month.year }}"
+            {% if month.is_current %}id="current-month"{% endif %}
+        >
+            <div class="month-label-row">
+                <strong class="month-label" style="grid-column: {{ month.label_column }};">
+                    {{ month.short_title }}
+                </strong>
+                <span class="month-label-line" style="grid-column: {{ month.label_column }} / 8;"></span>
+            </div>
+            <div class="calendar-month">
+                {% for week in month.weeks %}
+                    <div class="calendar-grid">
+                        {% for day in week %}
+                            {% if day.in_month %}
+                                <button
+                                    type="button"
+                                    class="calendar-day {% if day.is_today %}today-day{% endif %}{% if day.has_plans %} has-plans{% endif %}"
+                                    data-day-button
+                                    {% if day.has_plans %}
+                                        data-day-target="day-plan-{{ day.date_key }}"
+                                        aria-expanded="false"
+                                    {% else %}
+                                        data-empty-day
+                                    {% endif %}
+                                >
+                                    <span class="day-number">{{ day.number }}</span>
+                                    <span class="calendar-indicators" aria-hidden="true">
+                                        <span class="calendar-dot-row event-dots">
+                                            {% for dot in day.event_dots %}
+                                                <span class="calendar-dot"></span>
+                                            {% endfor %}
+                                        </span>
+                                        <span class="calendar-dot-row reminder-dots">
+                                            {% for dot in day.reminder_dots %}
+                                                <span class="calendar-dot"></span>
+                                            {% endfor %}
+                                        </span>
+                                    </span>
+                                </button>
+                            {% else %}
+                                <div class="calendar-day empty-day"></div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    {% for day in week %}
+                        {% if day.in_month and day.has_plans %}
+                            <section class="day-plan" id="day-plan-{{ day.date_key }}" hidden>
+                                <p class="day-plan-title">{{ day.date|date:"F j, l" }}</p>
+                                <div class="event-list day-plan-list">
+                                    {% for card in day.cards %}
+                                        {% include "planner/partials/event_card.html" with card=card calendar_mode=True %}
+                                    {% endfor %}
+                                    {% for reminder in day.reminders %}
+                                        {% include "planner/partials/reminder_card.html" with reminder=reminder calendar_mode=True %}
+                                    {% endfor %}
+                                </div>
+                            </section>
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            </div>
+        </section>
+    {% endfor %}
 </section>
+
+<script>
+    (() => {
+        const year = document.getElementById("calendar-year");
+        const stickyHead = document.querySelector(".calendar-sticky-head");
+        const months = Array.from(document.querySelectorAll("[data-calendar-month]"));
+        const dayButtons = Array.from(document.querySelectorAll("[data-day-button]"));
+        const dayPlans = Array.from(document.querySelectorAll(".day-plan"));
+        const currentMonth = document.getElementById("current-month");
+
+        const updateYear = () => {
+            if (!year || !stickyHead || months.length === 0) {
+                return;
+            }
+
+            const marker = stickyHead.getBoundingClientRect().bottom + 1;
+            let activeMonth = months[0];
+
+            for (const month of months) {
+                if (month.getBoundingClientRect().top <= marker) {
+                    activeMonth = month;
+                } else {
+                    break;
+                }
+            }
+
+            year.textContent = activeMonth.dataset.year;
+        };
+
+        const closeDayPlans = () => {
+            for (const plan of dayPlans) {
+                plan.hidden = true;
+            }
+
+            for (const button of dayButtons) {
+                button.setAttribute("aria-expanded", "false");
+            }
+        };
+
+        for (const button of dayButtons) {
+            button.addEventListener("click", () => {
+                const targetId = button.dataset.dayTarget;
+
+                if (!targetId) {
+                    button.classList.remove("shake-day");
+                    void button.offsetWidth;
+                    button.classList.add("shake-day");
+                    return;
+                }
+
+                const plan = document.getElementById(targetId);
+                if (!plan) {
+                    return;
+                }
+
+                const shouldOpen = plan.hidden;
+                closeDayPlans();
+
+                if (shouldOpen) {
+                    plan.hidden = false;
+                    button.setAttribute("aria-expanded", "true");
+                }
+            });
+
+            button.addEventListener("animationend", () => {
+                button.classList.remove("shake-day");
+            });
+        }
+
+        if (currentMonth) {
+            currentMonth.scrollIntoView();
+        }
+
+        requestAnimationFrame(updateYear);
+        window.addEventListener("scroll", updateYear, { passive: true });
+        window.addEventListener("resize", updateYear);
+    })();
+</script>
 {% endblock %}

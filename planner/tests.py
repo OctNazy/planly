@@ -45,6 +45,38 @@ class EventViewsTests(TestCase):
             ).exists()
         )
 
+    def test_user_cannot_create_event_with_end_before_start(self):
+        self.client.login(username="nazar", password="testpass123")
+
+        response = self.client.post(
+            reverse("event_create"),
+            {
+                "title": "Wrong time",
+                "description": "",
+                "start_at": "2026-07-10T18:00",
+                "end_at": "2026-07-10T17:00",
+                "location": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "End time must be after start time.")
+        self.assertFalse(Event.objects.filter(title="Wrong time").exists())
+
+    def test_event_create_page_shows_group_picker(self):
+        FriendRequest.objects.create(
+            from_user=self.user,
+            to_user=self.other_user,
+            status=FriendRequest.Status.ACCEPTED,
+        )
+        self.client.login(username="nazar", password="testpass123")
+
+        response = self.client.get(reverse("event_create"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Group event")
+        self.assertContains(response, "friend")
+
     def test_user_cannot_open_other_user_event(self):
         event = Event.objects.create(
             owner=self.other_user,
@@ -74,6 +106,7 @@ class EventViewsTests(TestCase):
                 "end_at": "",
                 "location": "City center",
                 "visibility": Event.Visibility.INVITE_ONLY,
+                "is_group": "on",
                 "invited_friends": [self.other_user.id],
             },
         )
@@ -87,6 +120,53 @@ class EventViewsTests(TestCase):
                 status=EventInvite.Status.PENDING,
             ).exists()
         )
+
+    def test_accepted_invited_event_appears_in_main_event_list(self):
+        event = Event.objects.create(
+            owner=self.user,
+            title="Group dinner",
+            start_at="2026-07-10T18:00Z",
+            visibility=Event.Visibility.INVITE_ONLY,
+        )
+        EventInvite.objects.create(
+            event=event,
+            invited_user=self.other_user,
+            status=EventInvite.Status.ACCEPTED,
+        )
+        self.client.login(username="friend", password="testpass123")
+
+        response = self.client.get(reverse("event_list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Group dinner")
+        self.assertNotContains(response, "Shared with you")
+
+    def test_calendar_marks_days_with_events(self):
+        Event.objects.create(
+            owner=self.user,
+            title="Calendar event",
+            start_at="2026-07-10T18:00Z",
+        )
+        Reminder.objects.create(
+            owner=self.user,
+            title="Calendar reminder",
+            remind_date="2026-07-10",
+        )
+        self.client.login(username="nazar", password="testpass123")
+
+        response = self.client.get(reverse("calendar"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "2026")
+        self.assertContains(response, "Jul")
+        self.assertContains(response, "calendar-scroll")
+        self.assertContains(response, 'id="current-month"')
+        self.assertContains(response, "event-dots")
+        self.assertContains(response, "reminder-dots")
+        self.assertContains(response, 'data-day-target="day-plan-2026-07-10"')
+        self.assertContains(response, 'id="day-plan-2026-07-10"')
+        self.assertContains(response, "Calendar event")
+        self.assertContains(response, "Calendar reminder")
 
     def test_invited_user_can_accept_event_invite(self):
         event = Event.objects.create(
