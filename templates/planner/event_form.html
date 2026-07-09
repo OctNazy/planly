@@ -2,11 +2,14 @@
 
 {% block content %}
 <section class="screen-top">
-    {% if event %}
-        <h2>Edit event</h2>
-    {% else %}
-        <h2>New event</h2>
-    {% endif %}
+    <div class="screen-heading">
+        {% include "planner/partials/back_button.html" with fallback_url="home" %}
+        {% if event %}
+            <h2>Edit event</h2>
+        {% else %}
+            <h2>New event</h2>
+        {% endif %}
+    </div>
 
     <details class="info-popover">
         <summary aria-label="Event info">i</summary>
@@ -53,6 +56,12 @@
             {{ form.location.label_tag }}
             {{ form.location }}
             {{ form.location.errors }}
+        </div>
+
+        <div class="field" data-visibility-field>
+            {{ form.visibility.label_tag }}
+            {{ form.visibility }}
+            {{ form.visibility.errors }}
         </div>
 
         <div class="field">
@@ -108,10 +117,6 @@
     </form>
 </section>
 
-<p class="bottom-text">
-    <a href="{% url 'event_list' %}">Back to plans</a>
-</p>
-
 <script>
     (() => {
         const form = document.querySelector("[data-event-form]");
@@ -119,6 +124,7 @@
 
         const groupCheckbox = form.querySelector("[data-group-checkbox]");
         const groupPanel = form.querySelector("[data-group-panel]");
+        const visibilityField = form.querySelector("[data-visibility-field]");
         const selectedFriends = form.querySelector("[data-selected-friends]");
         const plusButton = form.querySelector("[data-friend-plus]");
         const friendList = form.querySelector("[data-friend-list]");
@@ -167,6 +173,7 @@
 
         function syncGroupPanel() {
             groupPanel.hidden = !groupCheckbox.checked;
+            visibilityField.hidden = groupCheckbox.checked;
             if (!groupCheckbox.checked) {
                 friendList.hidden = true;
             }

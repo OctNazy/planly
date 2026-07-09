@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="screen-top">
+<section class="screen-top screen-top-back">
+    {% include "planner/partials/back_button.html" with fallback_url="friends" %}
     <h2>Add friend</h2>
 </section>
 
@@ -13,7 +14,4 @@
     </form>
 </section>
 
-<p class="bottom-text">
-    <a href="{% url 'friends' %}">Back to friends</a>
-</p>
 {% endblock %}

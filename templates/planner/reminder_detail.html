@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="screen-top">
+<section class="screen-top screen-top-back">
+    {% include "planner/partials/back_button.html" with fallback_url="home" %}
     <h2>Reminder</h2>
 </section>
 
@@ -53,6 +54,5 @@
             <button type="submit">Done</button>
         </form>
     {% endif %}
-    <a href="{% url 'event_list' %}">Back</a>
 </section>
 {% endblock %}

@@ -2,7 +2,13 @@ from django import forms
 from django.contrib.auth.models import User
 from django.db.models import Q
 
-from .models import Event, EventInvite, FriendRequest, Reminder
+from .models import (
+    Event,
+    EventChangeProposal,
+    EventInvite,
+    FriendRequest,
+    Reminder,
+)
 
 
 def accepted_friend_queryset(user):
@@ -19,6 +25,13 @@ def accepted_friend_queryset(user):
 
 
 class EventForm(forms.ModelForm):
+    visibility = forms.ChoiceField(
+        label="Who can see this event?",
+        choices=[
+            (Event.Visibility.PRIVATE, "Only me"),
+            (Event.Visibility.FRIENDS, "My friends"),
+        ],
+    )
     is_group = forms.BooleanField(
         label="Group event",
         required=False,
@@ -65,6 +78,9 @@ class EventForm(forms.ModelForm):
                 flat=True,
             )
 
+            if self.instance.visibility == Event.Visibility.INVITE_ONLY:
+                self.fields["visibility"].initial = Event.Visibility.PRIVATE
+
     def clean(self):
         cleaned_data = super().clean()
         start_at = cleaned_data.get("start_at")
@@ -83,7 +99,69 @@ class EventForm(forms.ModelForm):
             "start_at",
             "end_at",
             "location",
+            "visibility",
             "is_group",
+            "invited_friends",
+        ]
+
+
+class EventChangeProposalForm(forms.ModelForm):
+    invited_friends = forms.ModelMultipleChoiceField(
+        label="Invite more friends",
+        queryset=User.objects.none(),
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+    )
+    start_at = forms.DateTimeField(
+        input_formats=["%Y-%m-%dT%H:%M"],
+        widget=forms.DateTimeInput(
+            attrs={"type": "datetime-local"},
+            format="%Y-%m-%dT%H:%M",
+        ),
+    )
+    end_at = forms.DateTimeField(
+        required=False,
+        input_formats=["%Y-%m-%dT%H:%M"],
+        widget=forms.DateTimeInput(
+            attrs={"type": "datetime-local"},
+            format="%Y-%m-%dT%H:%M",
+        ),
+    )
+
+    def __init__(self, *args, user, event, **kwargs):
+        super().__init__(*args, **kwargs)
+        current_participant_ids = event.invites.exclude(
+            status=EventInvite.Status.DECLINED,
+        ).values_list("invited_user_id", flat=True)
+        self.fields["invited_friends"].queryset = accepted_friend_queryset(
+            user
+        ).exclude(
+            id__in=[event.owner_id, user.id, *current_participant_ids],
+        ).select_related("profile")
+
+        if self.instance.pk:
+            self.fields["invited_friends"].initial = (
+                self.instance.proposed_invitees.all()
+            )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_at = cleaned_data.get("start_at")
+        end_at = cleaned_data.get("end_at")
+
+        if start_at and end_at and end_at <= start_at:
+            self.add_error("end_at", "End time must be after start time.")
+
+        return cleaned_data
+
+    class Meta:
+        model = EventChangeProposal
+        fields = [
+            "title",
+            "description",
+            "start_at",
+            "end_at",
+            "location",
             "invited_friends",
         ]
 

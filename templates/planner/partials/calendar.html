@@ -1,0 +1,190 @@
+<section
+    class="calendar-shell{% if compact_calendar %} compact-calendar-shell{% endif %}"
+    data-calendar-shell
+    data-compact="{{ compact_calendar|yesno:'true,false' }}"
+>
+    <section class="calendar-sticky-head">
+        <div class="calendar-year-row">
+            <h2 data-calendar-year>{{ calendar_year }}</h2>
+        </div>
+        <div class="calendar-grid calendar-weekdays">
+            {% for weekday in weekdays %}
+                <span>{{ weekday }}</span>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="calendar-scroll">
+        {% for month in calendar_months %}
+            <section
+                class="calendar-card"
+                data-calendar-month
+                data-year="{{ month.year }}"
+                {% if month.is_current %}id="current-month" data-current-month{% endif %}
+            >
+                <div class="month-label-row">
+                    <strong class="month-label" style="grid-column: {{ month.label_column }};">
+                        {{ month.short_title }}
+                    </strong>
+                    <span class="month-label-line" style="grid-column: {{ month.label_column }} / 8;"></span>
+                </div>
+                <div class="calendar-month">
+                    {% for week in month.weeks %}
+                        <div class="calendar-grid">
+                            {% for day in week %}
+                                {% if day.in_month %}
+                                    <button
+                                        type="button"
+                                        class="calendar-day {% if day.is_today %}today-day{% endif %}{% if day.has_plans %} has-plans{% endif %}"
+                                        data-day-button
+                                        {% if day.has_plans %}
+                                            data-day-target="day-plan-{{ day.date_key }}"
+                                            aria-expanded="false"
+                                        {% else %}
+                                            data-empty-day
+                                        {% endif %}
+                                    >
+                                        <span class="day-number">{{ day.number }}</span>
+                                        <span class="calendar-indicators" aria-hidden="true">
+                                            <span class="calendar-dot-row event-dots">
+                                                {% for dot in day.event_dots %}
+                                                    <span class="calendar-dot"></span>
+                                                {% endfor %}
+                                            </span>
+                                            <span class="calendar-dot-row reminder-dots">
+                                                {% for dot in day.reminder_dots %}
+                                                    <span class="calendar-dot"></span>
+                                                {% endfor %}
+                                            </span>
+                                        </span>
+                                    </button>
+                                {% else %}
+                                    <div class="calendar-day empty-day"></div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+
+                        {% for day in week %}
+                            {% if day.in_month and day.has_plans %}
+                                <section class="day-plan" id="day-plan-{{ day.date_key }}" hidden>
+                                    <p class="day-plan-title">{{ day.date|date:"F j, l" }}</p>
+                                    <div class="event-list day-plan-list">
+                                        {% for card in day.cards %}
+                                            {% include "planner/partials/event_card.html" with card=card calendar_mode=True %}
+                                        {% endfor %}
+                                        {% for reminder in day.reminders %}
+                                            {% include "planner/partials/reminder_card.html" with reminder=reminder calendar_mode=True %}
+                                        {% endfor %}
+                                    </div>
+                                </section>
+                            {% endif %}
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+            </section>
+        {% endfor %}
+    </section>
+</section>
+
+<script>
+    (() => {
+        const shell = document.querySelector("[data-calendar-shell]");
+        if (!shell) return;
+
+        const year = shell.querySelector("[data-calendar-year]");
+        const stickyHead = shell.querySelector(".calendar-sticky-head");
+        const months = [...shell.querySelectorAll("[data-calendar-month]")];
+        const dayButtons = [...shell.querySelectorAll("[data-day-button]")];
+        const dayPlans = [...shell.querySelectorAll(".day-plan")];
+        const currentMonth = shell.querySelector("[data-current-month]");
+        const isCompact = shell.dataset.compact === "true";
+        const scrollTarget = isCompact ? shell : window;
+
+        const updateYear = () => {
+            if (!year || !stickyHead || months.length === 0) return;
+
+            const marker = stickyHead.getBoundingClientRect().bottom + 1;
+            let activeMonth = months[0];
+
+            for (const month of months) {
+                if (month.getBoundingClientRect().top <= marker) {
+                    activeMonth = month;
+                } else {
+                    break;
+                }
+            }
+
+            year.textContent = activeMonth.dataset.year;
+        };
+
+        const closeDayPlans = () => {
+            for (const plan of dayPlans) {
+                plan.hidden = true;
+            }
+
+            for (const button of dayButtons) {
+                button.setAttribute("aria-expanded", "false");
+            }
+        };
+
+        const scrollToCurrentMonth = (behavior = "auto") => {
+            if (!currentMonth) return;
+
+            if (isCompact) {
+                const monthTop = (
+                    currentMonth.getBoundingClientRect().top
+                    - shell.getBoundingClientRect().top
+                    + shell.scrollTop
+                );
+                shell.scrollTo({
+                    top: monthTop - stickyHead.offsetHeight,
+                    behavior,
+                });
+            } else {
+                currentMonth.scrollIntoView({
+                    behavior,
+                    block: "start",
+                });
+            }
+        };
+
+        for (const button of dayButtons) {
+            button.addEventListener("click", () => {
+                const targetId = button.dataset.dayTarget;
+
+                if (!targetId) {
+                    button.classList.remove("shake-day");
+                    void button.offsetWidth;
+                    button.classList.add("shake-day");
+                    return;
+                }
+
+                const plan = document.getElementById(targetId);
+                if (!plan) return;
+
+                const shouldOpen = plan.hidden;
+                closeDayPlans();
+
+                if (shouldOpen) {
+                    plan.hidden = false;
+                    button.setAttribute("aria-expanded", "true");
+                }
+            });
+
+            button.addEventListener("animationend", () => {
+                button.classList.remove("shake-day");
+            });
+        }
+
+        requestAnimationFrame(() => {
+            scrollToCurrentMonth();
+            updateYear();
+        });
+
+        document.addEventListener("planly:calendar-current", () => {
+            scrollToCurrentMonth("smooth");
+        });
+        scrollTarget.addEventListener("scroll", updateYear, { passive: true });
+        window.addEventListener("resize", updateYear);
+    })();
+</script>

@@ -66,6 +66,44 @@ class EventInvite(models.Model):
         return f"{self.event} -> {self.invited_user}"
 
 
+class EventChangeProposal(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        ACCEPTED = "accepted", "Accepted"
+        REJECTED = "rejected", "Rejected"
+
+    event = models.ForeignKey(
+        Event,
+        on_delete=models.CASCADE,
+        related_name="change_proposals",
+    )
+    proposed_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="event_change_proposals",
+    )
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    start_at = models.DateTimeField()
+    end_at = models.DateTimeField(null=True, blank=True)
+    location = models.CharField(max_length=200, blank=True)
+    proposed_invitees = models.ManyToManyField(
+        User,
+        blank=True,
+        related_name="proposed_event_invites",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.event} changes by {self.proposed_by}"
+
+
 class Reminder(models.Model):
     class Repeat(models.TextChoices):
         NONE = "none", "No repeat"
@@ -139,3 +177,66 @@ class FriendRequest(models.Model):
 
     def __str__(self):
         return f"{self.from_user} -> {self.to_user}"
+
+
+class Notification(models.Model):
+    class Kind(models.TextChoices):
+        FRIEND_REQUEST = "friend_request", "Friend request"
+        FRIEND_ACCEPTED = "friend_accepted", "Friend accepted"
+        EVENT_INVITE = "event_invite", "Event invite"
+        EVENT_INVITE_ACCEPTED = "event_invite_accepted", "Event invite accepted"
+        EVENT_INVITE_DECLINED = "event_invite_declined", "Event invite declined"
+        EVENT_LEFT = "event_left", "Event left"
+        EVENT_DELETED = "event_deleted", "Event deleted"
+        CHANGE_PROPOSED = "change_proposed", "Change proposed"
+        CHANGE_ACCEPTED = "change_accepted", "Change accepted"
+        CHANGE_REJECTED = "change_rejected", "Change rejected"
+
+    recipient = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="notifications",
+    )
+    actor = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="sent_notifications",
+    )
+    kind = models.CharField(max_length=40, choices=Kind.choices)
+    title = models.CharField(max_length=200)
+    message = models.TextField(blank=True)
+    event = models.ForeignKey(
+        Event,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="notifications",
+    )
+    friend_request = models.ForeignKey(
+        FriendRequest,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="notifications",
+    )
+    change_proposal = models.ForeignKey(
+        EventChangeProposal,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="notifications",
+    )
+    is_read = models.BooleanField(default=False)
+    read_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["recipient", "is_read", "-created_at"]),
+        ]
+
+    def __str__(self):
+        return self.title

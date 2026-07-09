@@ -52,21 +52,67 @@
     </section>
 {% endif %}
 
+{% if incoming_requests %}
+    <section class="list-section">
+        <div class="section-title">
+            <h3>Incoming requests</h3>
+        </div>
+
+        <section class="event-list">
+            {% for friend_request in incoming_requests %}
+                <article class="friend-row">
+                    <div class="friend-main">
+                        {% include "planner/partials/user_avatar.html" with person=friend_request.from_user class_name="user-avatar" %}
+                        <div>
+                            <h3>{{ friend_request.from_user.username }}</h3>
+                            <p class="muted">Wants to add you</p>
+                        </div>
+                    </div>
+
+                    <div class="friend-actions">
+                        <form method="post" action="{% url 'friend_request_accept' friend_request.pk %}">
+                            {% csrf_token %}
+                            <button type="submit">Accept</button>
+                        </form>
+                        <form method="post" action="{% url 'friend_request_reject' friend_request.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="secondary-button">Reject</button>
+                        </form>
+                    </div>
+                </article>
+            {% endfor %}
+        </section>
+    </section>
+{% endif %}
+
 <section class="list-section">
     <div class="section-title">
         <h3>Your friends</h3>
     </div>
 
     <section class="event-list">
-        {% for friend in friends %}
-            <article class="friend-row">
-                <div class="friend-main">
-                    {% include "planner/partials/user_avatar.html" with person=friend class_name="user-avatar" %}
-                    <div>
-                        <h3>{{ friend.username }}</h3>
-                        <p class="muted">Friend</p>
+        {% for card in friend_cards %}
+            <article class="friend-profile-card{% if card.shared_event_cards %} has-shared-events{% endif %}">
+                <a href="{% url 'friend_profile' card.friend.username %}" class="friend-row friend-profile-link">
+                    <div class="friend-main">
+                        {% include "planner/partials/user_avatar.html" with person=card.friend class_name="user-avatar" %}
+                        <div>
+                            <h3>{{ card.friend.username }}</h3>
+                            <p class="muted">View profile and calendar</p>
+                        </div>
                     </div>
-                </div>
+                </a>
+
+                {% if card.shared_event_cards %}
+                    <div class="friend-shared-events">
+                        <p class="friend-shared-title">Upcoming together</p>
+                        <div class="friend-shared-scroll">
+                            {% for event_card in card.shared_event_cards %}
+                                {% include "planner/partials/event_card.html" with card=event_card mini_mode=True %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
             </article>
         {% empty %}
             <section class="empty-state">
@@ -77,62 +123,30 @@
     </section>
 </section>
 
-<section class="list-section">
-    <div class="section-title">
-        <h3>Incoming requests</h3>
-    </div>
+{% if outgoing_requests %}
+    <section class="list-section">
+        <div class="section-title">
+            <h3>Sent requests</h3>
+        </div>
 
-    <section class="event-list">
-        {% for friend_request in incoming_requests %}
-            <article class="friend-row">
-                <div class="friend-main">
-                    {% include "planner/partials/user_avatar.html" with person=friend_request.from_user class_name="user-avatar" %}
-                    <div>
-                        <h3>{{ friend_request.from_user.username }}</h3>
-                        <p class="muted">Wants to add you</p>
+        <section class="event-list">
+            {% for friend_request in outgoing_requests %}
+                <article class="friend-row">
+                    <div class="friend-main">
+                        {% include "planner/partials/user_avatar.html" with person=friend_request.to_user class_name="user-avatar" %}
+                        <div>
+                            <h3>{{ friend_request.to_user.username }}</h3>
+                            <p class="muted">Waiting for answer</p>
+                        </div>
                     </div>
-                </div>
 
-                <div class="friend-actions">
-                    <form method="post" action="{% url 'friend_request_accept' friend_request.pk %}">
+                    <form method="post" action="{% url 'friend_request_cancel' friend_request.pk %}">
                         {% csrf_token %}
-                        <button type="submit">Accept</button>
+                        <button type="submit" class="secondary-button">Cancel</button>
                     </form>
-                    <form method="post" action="{% url 'friend_request_reject' friend_request.pk %}">
-                        {% csrf_token %}
-                        <button type="submit" class="secondary-button">Reject</button>
-                    </form>
-                </div>
-            </article>
-        {% empty %}
-            <section class="empty-state">
-                <p class="muted">No incoming requests.</p>
-            </section>
-        {% endfor %}
+                </article>
+            {% endfor %}
+        </section>
     </section>
-</section>
-
-<section class="list-section">
-    <div class="section-title">
-        <h3>Sent requests</h3>
-    </div>
-
-    <section class="event-list">
-        {% for friend_request in outgoing_requests %}
-            <article class="friend-row">
-                <div class="friend-main">
-                    {% include "planner/partials/user_avatar.html" with person=friend_request.to_user class_name="user-avatar" %}
-                    <div>
-                        <h3>{{ friend_request.to_user.username }}</h3>
-                        <p class="muted">Waiting for answer</p>
-                    </div>
-                </div>
-            </article>
-        {% empty %}
-            <section class="empty-state">
-                <p class="muted">No sent requests.</p>
-            </section>
-        {% endfor %}
-    </section>
-</section>
+{% endif %}
 {% endblock %}

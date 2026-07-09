@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="friend-profile-page">
+    <div class="screen-top screen-top-back">
+        {% include "planner/partials/back_button.html" with fallback_url="friends" %}
+    </div>
+
+    <header class="friend-profile-header">
+        {% include "planner/partials/user_avatar.html" with person=profile_user class_name="friend-profile-avatar" %}
+        <div>
+            <h2>{{ profile_user.username }}</h2>
+            {% if profile_user.first_name %}
+                <p>{{ profile_user.first_name }}</p>
+            {% endif %}
+            <p class="muted">Your friend</p>
+        </div>
+    </header>
+
+    <section class="profile-stats">
+        <div>
+            <strong>{{ public_event_count }}</strong>
+            <span>Shared publicly</span>
+        </div>
+        <div>
+            <strong>{{ shared_event_count }}</strong>
+            <span>Events together</span>
+        </div>
+    </section>
+
+    <section class="profile-calendar-block">
+        <div class="section-title">
+            <h3>Calendar</h3>
+            <span>Public and shared events</span>
+        </div>
+
+        {% include "planner/partials/calendar.html" with compact_calendar=True %}
+    </section>
+
+</section>
+{% endblock %}

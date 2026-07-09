@@ -1,85 +1,160 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="screen-top">
+<section class="screen-top screen-top-back">
+    {% include "planner/partials/back_button.html" with fallback_url="home" %}
     <h2>Notifications</h2>
 </section>
 
-{% if event_invites or friend_requests %}
-    {% if event_invites %}
-        <section class="list-section">
-            <div class="section-title">
-                <h3>Event invites</h3>
-            </div>
-
-            <section class="event-list">
-                {% for invite in event_invites %}
-                    <article class="invite-row">
+{% if notifications %}
+    <section class="event-list">
+        {% for notification in notifications %}
+            <div class="notification-swipe">
+                {% if notification.action_invite %}
+                    <article class="invite-row notification-row{% if not notification.is_read %} unread-notification{% endif %}">
                         <div class="date-box">
-                            <span>{{ invite.event.start_at|date:"d" }}</span>
-                            <small>{{ invite.event.start_at|date:"M" }}</small>
+                            <span>{{ notification.event.start_at|date:"d" }}</span>
+                            <small>{{ notification.event.start_at|date:"M" }}</small>
                         </div>
 
                         <div class="event-info">
-                            <p class="event-time">From {{ invite.event.owner.username }}</p>
-                            <h3>{{ invite.event.title }}</h3>
-                            {% if invite.event.location %}
-                                <p class="muted">{{ invite.event.location }}</p>
+                            <p class="event-time">From {{ notification.event.owner.username }}</p>
+                            <h3>{{ notification.event.title }}</h3>
+                            {% if notification.event.location %}
+                                <p class="muted">{{ notification.event.location }}</p>
                             {% endif %}
                         </div>
 
                         <div class="friend-actions">
-                            <form method="post" action="{% url 'event_invite_accept' invite.pk %}">
+                            <form method="post" action="{% url 'event_invite_accept' notification.action_invite.pk %}">
                                 {% csrf_token %}
                                 <button type="submit">Join</button>
                             </form>
-                            <form method="post" action="{% url 'event_invite_decline' invite.pk %}">
+                            <form method="post" action="{% url 'event_invite_decline' notification.action_invite.pk %}">
                                 {% csrf_token %}
                                 <button type="submit" class="secondary-button">No</button>
                             </form>
                         </div>
                     </article>
-                {% endfor %}
-            </section>
-        </section>
-    {% endif %}
-
-    {% if friend_requests %}
-        <section class="list-section">
-            <div class="section-title">
-                <h3>Friend requests</h3>
-            </div>
-
-            <section class="event-list">
-                {% for friend_request in friend_requests %}
-                    <article class="friend-row">
-                        <div class="friend-main">
-                            {% include "planner/partials/user_avatar.html" with person=friend_request.from_user class_name="user-avatar" %}
+                {% elif notification.action_friend_request %}
+                    <article class="friend-row notification-row{% if not notification.is_read %} unread-notification{% endif %}">
+                        <a
+                            href="{% url 'friend_profile' notification.action_friend_request.from_user.username %}"
+                            class="friend-main notification-main-link"
+                        >
+                            {% include "planner/partials/user_avatar.html" with person=notification.action_friend_request.from_user class_name="user-avatar" %}
                             <div>
-                                <h3>{{ friend_request.from_user.username }}</h3>
+                                <h3>{{ notification.action_friend_request.from_user.username }}</h3>
                                 <p class="muted">Wants to add you</p>
                             </div>
-                        </div>
+                        </a>
 
                         <div class="friend-actions">
-                            <form method="post" action="{% url 'friend_request_accept' friend_request.pk %}">
+                            <form method="post" action="{% url 'friend_request_accept' notification.action_friend_request.pk %}">
                                 {% csrf_token %}
                                 <button type="submit">Accept</button>
                             </form>
-                            <form method="post" action="{% url 'friend_request_reject' friend_request.pk %}">
+                            <form method="post" action="{% url 'friend_request_reject' notification.action_friend_request.pk %}">
                                 {% csrf_token %}
                                 <button type="submit" class="secondary-button">Reject</button>
                             </form>
                         </div>
                     </article>
-                {% endfor %}
-            </section>
-        </section>
-    {% endif %}
+                {% else %}
+                    <article class="notification-card{% if not notification.is_read %} unread-notification{% endif %}">
+                        {% if notification.actor %}
+                            {% include "planner/partials/user_avatar.html" with person=notification.actor class_name="user-avatar" %}
+                        {% else %}
+                            <span class="notification-icon" aria-hidden="true">!</span>
+                        {% endif %}
+
+                        <div>
+                            {% if notification.kind == "friend_request" and notification.friend_request %}
+                            <a
+                                href="{% url 'friend_profile' notification.friend_request.from_user.username %}"
+                                class="notification-main-link"
+                            >
+                                <h3>{{ notification.friend_request.from_user.username }}</h3>
+                                <p class="muted">Wants to add you</p>
+                                <small>{{ notification.created_at|timesince }} ago</small>
+                            </a>
+                            {% elif notification.kind == "change_proposed" and notification.change_proposal %}
+                                <h3>{{ notification.change_proposal.event.title }}</h3>
+                                <p class="muted">
+                                    Changes suggested by {{ notification.change_proposal.proposed_by.username }}
+                                </p>
+                                <small>{{ notification.created_at|timesince }} ago</small>
+                            {% else %}
+                                <a
+                                    {% if notification.event %}
+                                        href="{% url 'event_detail' notification.event.pk %}"
+                                    {% elif notification.friend_request %}
+                                        href="{% url 'friends' %}"
+                                    {% else %}
+                                        href="{% url 'notifications' %}"
+                                    {% endif %}
+                                    class="notification-main-link"
+                                >
+                                    <h3>{{ notification.title }}</h3>
+                                    <small>{{ notification.created_at|timesince }} ago</small>
+                                </a>
+                            {% endif %}
+                        </div>
+
+                        {% if notification.action_proposal %}
+                            <a
+                                href="{% url 'event_detail' notification.action_proposal.event.pk %}#proposal-{{ notification.action_proposal.pk }}"
+                                class="button-link notification-view-button"
+                            >
+                                View
+                            </a>
+                        {% elif not notification.is_read %}
+                            <span class="unread-dot" aria-label="Unread"></span>
+                        {% endif %}
+                    </article>
+                {% endif %}
+
+                <form
+                    method="post"
+                    action="{% url 'notification_delete' notification.pk %}"
+                    class="notification-delete-form"
+                >
+                    {% csrf_token %}
+                    <button type="submit">Delete</button>
+                </form>
+            </div>
+        {% endfor %}
+    </section>
 {% else %}
     <section class="empty-state">
         <h3>No notifications yet</h3>
         <p class="muted">You are all caught up.</p>
     </section>
 {% endif %}
+
+<script>
+    document.addEventListener("submit", async (event) => {
+        const form = event.target.closest(".notification-delete-form");
+        if (!form) return;
+
+        event.preventDefault();
+        const button = form.querySelector("button");
+        button.disabled = true;
+
+        const response = await fetch(form.action, {
+            method: "POST",
+            body: new FormData(form),
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+            },
+        });
+
+        if (response.ok) {
+            form.closest(".notification-swipe").remove();
+            return;
+        }
+
+        button.disabled = false;
+    });
+</script>
 {% endblock %}

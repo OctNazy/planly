@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Planly</title>
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}?v=18">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}?v=27">
 </head>
 <body>
     <main class="app">
@@ -17,16 +17,20 @@
         {% if user.is_authenticated %}
             {% with current_url=request.resolver_match.url_name %}
                 <nav class="bottom-nav" aria-label="Main navigation">
-                    {% if current_url == 'event_list' or current_url == 'event_detail' or current_url == 'event_update' or current_url == 'event_delete' or current_url == 'reminder_detail' or current_url == 'reminder_update' or current_url == 'reminder_delete' %}
-                        <span class="active" aria-label="Home">
+                    {% if current_url == 'home' %}
+                        <button type="button" class="active" aria-label="Scroll Home to top" data-scroll-page-top>
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="M3 11l9-8 9 8"></path>
                                 <path d="M5 10v10h14V10"></path>
                                 <path d="M9 20v-6h6v6"></path>
                             </svg>
-                        </span>
+                        </button>
                     {% else %}
-                        <a href="{% url 'event_list' %}" aria-label="Home">
+                        <a
+                            href="{% url 'home' %}"
+                            aria-label="Home"
+                            {% if current_url == 'event_detail' or current_url == 'event_update' or current_url == 'event_delete' or current_url == 'event_change_suggest' or current_url == 'reminder_detail' or current_url == 'reminder_update' or current_url == 'reminder_delete' %}class="active"{% endif %}
+                        >
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="M3 11l9-8 9 8"></path>
                                 <path d="M5 10v10h14V10"></path>
@@ -36,14 +40,14 @@
                     {% endif %}
 
                     {% if current_url == 'calendar' %}
-                        <span class="active" aria-label="Calendar">
+                        <button type="button" class="active" aria-label="Go to current month" data-scroll-calendar-current>
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <rect x="4" y="5" width="16" height="15" rx="2"></rect>
                                 <path d="M8 3v4"></path>
                                 <path d="M16 3v4"></path>
                                 <path d="M4 10h16"></path>
                             </svg>
-                        </span>
+                        </button>
                     {% else %}
                         <a href="{% url 'calendar' %}" aria-label="Calendar">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -56,12 +60,12 @@
                     {% endif %}
 
                     {% if current_url == 'event_create' or current_url == 'reminder_create' %}
-                        <span class="active" aria-label="Create">
+                        <button type="button" class="active" aria-label="Scroll Create to top" data-scroll-page-top>
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="M12 5v14"></path>
                                 <path d="M5 12h14"></path>
                             </svg>
-                        </span>
+                        </button>
                     {% else %}
                         <a href="{% url 'event_create' %}" aria-label="Create">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -71,17 +75,21 @@
                         </a>
                     {% endif %}
 
-                    {% if current_url == 'friends' or current_url == 'friend_request_create' %}
-                        <span class="active" aria-label="Friends">
+                    {% if current_url == 'friends' %}
+                        <button type="button" class="active" aria-label="Scroll Friends to top" data-scroll-page-top>
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <circle cx="9" cy="8" r="3"></circle>
                                 <path d="M3 20c1-4 4-6 6-6s5 2 6 6"></path>
                                 <circle cx="17" cy="9" r="2"></circle>
                                 <path d="M15 15c2 0 4 2 5 5"></path>
                             </svg>
-                        </span>
+                        </button>
                     {% else %}
-                        <a href="{% url 'friends' %}" aria-label="Friends">
+                        <a
+                            href="{% url 'friends' %}"
+                            aria-label="Friends"
+                            {% if current_url == 'friend_request_create' or current_url == 'friend_profile' %}class="active"{% endif %}
+                        >
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <circle cx="9" cy="8" r="3"></circle>
                                 <path d="M3 20c1-4 4-6 6-6s5 2 6 6"></path>
@@ -92,12 +100,12 @@
                     {% endif %}
 
                     {% if current_url == 'settings' %}
-                        <span class="active" aria-label="Settings">
+                        <button type="button" class="active" aria-label="Scroll Settings to top" data-scroll-page-top>
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <circle cx="12" cy="12" r="3"></circle>
                                 <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2a2 2 0 1 1-4 0V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1A2 2 0 1 1 4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.4 7A2 2 0 1 1 7.2 4.2l.1.1a1.7 1.7 0 0 0 1.9.3h.1A1.7 1.7 0 0 0 10.3 3v-.2a2 2 0 1 1 4 0V3a1.7 1.7 0 0 0 1 1.6h.1a1.7 1.7 0 0 0 1.9-.3l.1-.1A2 2 0 1 1 20.2 7l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.6 1h.2a2 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.6.9z"></path>
                             </svg>
-                        </span>
+                        </button>
                     {% else %}
                         <a href="{% url 'settings' %}" aria-label="Settings">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -110,5 +118,40 @@
             {% endwith %}
         {% endif %}
     </main>
+
+    <script>
+        document.addEventListener("click", (event) => {
+            const backLink = event.target.closest("[data-back-link]");
+
+            if (backLink && document.referrer) {
+                const previousPage = new URL(document.referrer);
+
+                if (previousPage.origin === window.location.origin) {
+                    event.preventDefault();
+                    window.history.back();
+                    return;
+                }
+            }
+
+            if (event.target.closest("[data-scroll-page-top]")) {
+                window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+
+            if (event.target.closest("[data-scroll-calendar-current]")) {
+                document.dispatchEvent(new CustomEvent("planly:calendar-current"));
+            }
+        });
+
+        window.addEventListener("pageshow", (event) => {
+            const hasStaleNotificationState = (
+                document.querySelector(".notification-badge")
+                || document.querySelector(".unread-notification")
+            );
+
+            if (event.persisted && hasStaleNotificationState) {
+                window.location.reload();
+            }
+        });
+    </script>
 </body>
 </html>

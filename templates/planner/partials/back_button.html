@@ -1,0 +1,19 @@
+{% if fallback_pk %}
+    <a
+        href="{% url fallback_url fallback_pk %}"
+        class="back-action"
+        aria-label="Go back"
+        data-back-link
+    >
+{% else %}
+    <a
+        href="{% url fallback_url %}"
+        class="back-action"
+        aria-label="Go back"
+        data-back-link
+    >
+{% endif %}
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6"></path>
+        </svg>
+    </a>

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Event, EventInvite, FriendRequest, Reminder
+from .models import Event, EventInvite, FriendRequest, Notification, Reminder
 
 
 @admin.register(Event)
@@ -28,3 +28,10 @@ class FriendRequestAdmin(admin.ModelAdmin):
     list_display = ("from_user", "to_user", "status", "created_at")
     list_filter = ("status", "created_at")
     search_fields = ("from_user__username", "to_user__username")
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ("recipient", "kind", "title", "is_read", "created_at")
+    list_filter = ("kind", "is_read", "created_at")
+    search_fields = ("recipient__username", "actor__username", "title", "message")

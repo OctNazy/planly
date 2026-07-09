@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="screen-top screen-top-back">
+    {% include "planner/partials/back_button.html" with fallback_url="event_detail" fallback_pk=event.pk %}
+    <h2>Suggest changes</h2>
+</section>
+
+<section class="form-card">
+    <p class="muted">
+        The event will change only after {{ event.owner.username }} accepts your suggestion.
+    </p>
+
+    <form method="post" class="plan-form">
+        {% csrf_token %}
+
+        <div class="field">
+            {{ form.title.label_tag }}
+            {{ form.title }}
+            {{ form.title.errors }}
+        </div>
+
+        <div class="field">
+            {{ form.description.label_tag }}
+            {{ form.description }}
+            {{ form.description.errors }}
+        </div>
+
+        <div class="field">
+            {{ form.start_at.label_tag }}
+            {{ form.start_at }}
+            {{ form.start_at.errors }}
+        </div>
+
+        <div class="field">
+            {{ form.end_at.label_tag }}
+            {{ form.end_at }}
+            {{ form.end_at.errors }}
+        </div>
+
+        <div class="field">
+            {{ form.location.label_tag }}
+            {{ form.location }}
+            {{ form.location.errors }}
+        </div>
+
+        <div class="field">
+            <label>{{ form.invited_friends.label }}</label>
+            <div class="proposal-friend-list">
+                {% for checkbox in form.invited_friends %}
+                    <label class="proposal-friend-choice">
+                        {{ checkbox.tag }}
+                        <span>{{ checkbox.choice_label }}</span>
+                    </label>
+                {% empty %}
+                    <p class="muted">No other friends are available to invite.</p>
+                {% endfor %}
+            </div>
+            {{ form.invited_friends.errors }}
+            <span class="helptext">
+                Invitations are sent only if the owner accepts all proposed changes.
+            </span>
+        </div>
+
+        <button type="submit">
+            {% if proposal %}Update suggestion{% else %}Send suggestion{% endif %}
+        </button>
+    </form>
+</section>
+
+{% endblock %}

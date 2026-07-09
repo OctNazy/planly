@@ -1,5 +1,35 @@
 {% with event=card.event %}
-{% if calendar_mode %}
+{% if mini_mode %}
+    <a href="{% url 'event_detail' event.pk %}" class="mini-event-row">
+        <div class="mini-date-box">
+            <span>{{ event.start_at|date:"d" }}</span>
+            <small>{{ event.start_at|date:"M" }}</small>
+        </div>
+
+        <div class="mini-event-info">
+            <p>
+                {{ event.start_at|date:"H:i" }}{% if event.end_at %}-{{ event.end_at|date:"H:i" }}{% endif %}
+                {% if event.owner != user %}· {{ event.owner.username }}{% endif %}
+            </p>
+            <h3>{{ event.title }}</h3>
+            {% if event.location %}
+                <p>{{ event.location }}</p>
+            {% endif %}
+
+            {% if card.is_group %}
+                <div class="avatar-stack mini-avatar-stack">
+                    {% for person in card.participants %}
+                        {% include "planner/partials/user_avatar.html" with person=person class_name="mini-avatar avatar-stack-item" %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <span class="mini-tag">
+            {% if card.is_group %}Group{% else %}Shared{% endif %}
+        </span>
+    </a>
+{% elif calendar_mode %}
     <a href="{% url 'event_detail' event.pk %}" class="calendar-plan-item">
         <span class="calendar-plan-marker event-marker"></span>
         <span class="calendar-plan-time">

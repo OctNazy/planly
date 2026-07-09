@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="screen-top">
+<section class="screen-top screen-top-back">
+    {% include "planner/partials/back_button.html" with fallback_url="home" %}
     <h2>Event</h2>
 </section>
 
@@ -64,7 +65,86 @@
     {% if is_owner %}
         <a href="{% url 'event_update' event.pk %}" class="button-link">Edit</a>
         <a href="{% url 'event_delete' event.pk %}" class="danger-link">Delete</a>
+    {% elif guest_invite %}
+        <a href="{% url 'event_change_suggest' event.pk %}" class="button-link">
+            {% if guest_proposal %}Edit suggestion{% else %}Suggest changes{% endif %}
+        </a>
+        <form method="post" action="{% url 'event_invite_leave' guest_invite.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="danger-button">Leave event</button>
+        </form>
     {% endif %}
-    <a href="{% url 'event_list' %}">Back</a>
 </section>
+
+{% for card in proposal_cards %}
+    {% with proposal=card.proposal %}
+        <section class="proposal-review" id="proposal-{{ proposal.pk }}">
+            <div class="section-title">
+                <h3>Changes from {{ proposal.proposed_by.username }}</h3>
+            </div>
+
+            <article class="detail-card proposal-preview">
+                <p class="event-time{% if card.start_changed or card.end_changed %} proposal-changed{% endif %}">
+                    {{ proposal.start_at|date:"l, M d, H:i" }}{% if proposal.end_at %}-{{ proposal.end_at|date:"H:i" }}{% endif %}
+                </p>
+                <h2{% if card.title_changed %} class="proposal-changed"{% endif %}>
+                    {{ proposal.title }}
+                </h2>
+                <p class="muted">Proposed by {{ proposal.proposed_by.username }}</p>
+
+                {% if card.participants|length > 1 %}
+                    <div class="participants-block{% if card.invitees_changed %} proposal-changed{% endif %}">
+                        <p class="event-time">Participants</p>
+                        <div class="avatar-stack">
+                            {% for person in card.participants %}
+                                {% include "planner/partials/user_avatar.html" with person=person class_name="user-avatar avatar-stack-item" %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if proposal.description or card.description_changed %}
+                    <p class="description{% if card.description_changed %} proposal-changed{% endif %}">
+                        {% if proposal.description %}{{ proposal.description }}{% else %}No description{% endif %}
+                    </p>
+                {% endif %}
+
+                <dl class="details">
+                    {% if proposal.end_at or card.end_changed %}
+                        <div{% if card.end_changed %} class="proposal-changed"{% endif %}>
+                            <dt>Ends</dt>
+                            <dd>
+                                {% if proposal.end_at %}
+                                    {{ proposal.end_at|date:"M d, H:i" }}
+                                {% else %}
+                                    No end time
+                                {% endif %}
+                            </dd>
+                        </div>
+                    {% endif %}
+
+                    {% if proposal.location or card.location_changed %}
+                        <div{% if card.location_changed %} class="proposal-changed"{% endif %}>
+                            <dt>Location</dt>
+                            <dd>
+                                {% if proposal.location %}{{ proposal.location }}{% else %}No location{% endif %}
+                            </dd>
+                        </div>
+                    {% endif %}
+                </dl>
+            </article>
+
+            <div class="proposal-actions">
+                <form method="post" action="{% url 'event_change_proposal_accept' proposal.pk %}">
+                    {% csrf_token %}
+                    <button type="submit">Accept changes</button>
+                </form>
+                <form method="post" action="{% url 'event_change_proposal_reject' proposal.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="secondary-button">Reject</button>
+                </form>
+            </div>
+        </section>
+    {% endwith %}
+{% endfor %}
 {% endblock %}

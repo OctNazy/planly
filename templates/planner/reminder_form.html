@@ -2,11 +2,14 @@
 
 {% block content %}
 <section class="screen-top">
-    {% if reminder %}
-        <h2>Edit reminder</h2>
-    {% else %}
-        <h2>New reminder</h2>
-    {% endif %}
+    <div class="screen-heading">
+        {% include "planner/partials/back_button.html" with fallback_url="home" %}
+        {% if reminder %}
+            <h2>Edit reminder</h2>
+        {% else %}
+            <h2>New reminder</h2>
+        {% endif %}
+    </div>
 
     <details class="info-popover">
         <summary aria-label="Reminder info">i</summary>
@@ -29,7 +32,4 @@
     </form>
 </section>
 
-<p class="bottom-text">
-    <a href="{% url 'event_list' %}">Back to plans</a>
-</p>
 {% endblock %}
