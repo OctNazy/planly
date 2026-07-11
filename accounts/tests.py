@@ -3,6 +3,7 @@ import hmac
 import json
 from urllib.parse import urlencode
 
+from django.contrib.auth.models import User
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
@@ -78,6 +79,35 @@ class TelegramAuthTests(TestCase):
         self.assertEqual(profile.telegram_chat_id, 1001)
         self.assertEqual(profile.telegram_photo_url, "https://example.com/avatar.jpg")
         self.assertEqual(int(self.client.session["_auth_user_id"]), profile.user.id)
+
+    def test_telegram_auth_prefers_telegram_user_over_existing_session(self):
+        admin = User.objects.create_user(username="OctoNaz")
+        old_user = User.objects.create_user(username="Nazik663", password="testpass123")
+        Profile.objects.create(
+            user=admin,
+            telegram_id=1004,
+            telegram_username="Nazik663",
+            telegram_chat_id=1004,
+        )
+        Profile.objects.create(user=old_user)
+        self.client.login(username="Nazik663", password="testpass123")
+        init_data = telegram_init_data(
+            "123:test-token",
+            {
+                "id": 1004,
+                "username": "Nazik663",
+            },
+        )
+
+        response = self.client.post(
+            reverse("telegram_auth"),
+            data=json.dumps({"init_data": init_data}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(int(self.client.session["_auth_user_id"]), admin.id)
+        self.assertIsNone(Profile.objects.get(user=old_user).telegram_id)
 
     def test_telegram_auth_rejects_invalid_hash(self):
         init_data = telegram_init_data(

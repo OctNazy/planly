@@ -64,6 +64,23 @@ def get_or_create_telegram_user(telegram_user):
     return user
 
 
+def authenticate_telegram_user(request, telegram_user):
+    profile = Profile.objects.select_related("user").filter(
+        telegram_id=telegram_user.telegram_id,
+    ).first()
+
+    if profile:
+        apply_telegram_profile(profile, telegram_user)
+        return profile.user
+
+    if request.user.is_authenticated:
+        profile, _ = Profile.objects.get_or_create(user=request.user)
+        apply_telegram_profile(profile, telegram_user)
+        return request.user
+
+    return get_or_create_telegram_user(telegram_user)
+
+
 def register(request):
     if request.method == "POST":
         form = UserCreationForm(request.POST)
@@ -90,13 +107,7 @@ def telegram_auth(request):
         telegram_user = validate_telegram_init_data(payload.get("init_data", ""))
 
         with transaction.atomic():
-            if request.user.is_authenticated:
-                profile, _ = Profile.objects.get_or_create(user=request.user)
-                apply_telegram_profile(profile, telegram_user)
-                user = request.user
-            else:
-                user = get_or_create_telegram_user(telegram_user)
-
+            user = authenticate_telegram_user(request, telegram_user)
             login(request, user)
 
     except (json.JSONDecodeError, KeyError, TelegramAuthError, IntegrityError) as error:
