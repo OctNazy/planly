@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="telegram-entry" data-telegram-entry>
+    <div class="telegram-loader" aria-hidden="true"></div>
+    <h1>Opening Planly</h1>
+    <p data-telegram-entry-message>Checking your Telegram account...</p>
+</section>
+
+<script>
+    const entryMessage = document.querySelector("[data-telegram-entry-message]");
+    const telegramWebApp = window.Telegram && window.Telegram.WebApp;
+
+    async function openPlanlyFromTelegram() {
+        if (!telegramWebApp || !telegramWebApp.initData) {
+            entryMessage.textContent = "Opening regular login...";
+            window.location.replace("{% url 'login' %}");
+            return;
+        }
+
+        telegramWebApp.ready();
+        telegramWebApp.expand();
+
+        try {
+            const response = await fetch("{% url 'telegram_auth' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ init_data: telegramWebApp.initData }),
+            });
+
+            if (!response.ok) {
+                entryMessage.textContent = "Telegram login failed. Try opening Planly again from the bot.";
+                return;
+            }
+
+            sessionStorage.setItem("planlyTelegramAuthDone", telegramWebApp.initData);
+            window.location.replace("/");
+        } catch (error) {
+            entryMessage.textContent = "Connection failed. Check your internet and try again.";
+        }
+    }
+
+    openPlanlyFromTelegram();
+</script>
+{% endblock %}

@@ -129,6 +129,10 @@
         }
 
         async function authenticateTelegramMiniApp() {
+            if (document.querySelector("[data-telegram-entry]")) {
+                return;
+            }
+
             if (!telegramApp || !telegramApp.initData) {
                 return;
             }
@@ -137,13 +141,19 @@
                 return;
             }
 
-            const response = await fetch("{% url 'telegram_auth' %}", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ init_data: telegramApp.initData }),
-            });
+            let response;
+
+            try {
+                response = await fetch("{% url 'telegram_auth' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ init_data: telegramApp.initData }),
+                });
+            } catch (error) {
+                return;
+            }
 
             if (!response.ok) {
                 return;

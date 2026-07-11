@@ -121,6 +121,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+if running_tests():
+    MIDDLEWARE.remove('whitenoise.middleware.WhiteNoiseMiddleware')
+
 ROOT_URLCONF = 'config.urls'
 
 TEMPLATES = [
@@ -218,6 +221,11 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
+
+if running_tests():
+    STORAGES["staticfiles"] = {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    }
 
 if env_bool("SUPABASE_STORAGE_ENABLED"):
     AWS_ACCESS_KEY_ID = require_env("SUPABASE_STORAGE_ACCESS_KEY_ID")

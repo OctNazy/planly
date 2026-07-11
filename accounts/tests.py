@@ -36,6 +36,24 @@ def telegram_init_data(bot_token, user_data, auth_date=1783770000):
     TELEGRAM_AUTH_MAX_AGE_SECONDS=0,
 )
 class TelegramAuthTests(TestCase):
+    def test_register_redirects_to_home(self):
+        response = self.client.post(
+            reverse("register"),
+            {
+                "username": "new_user",
+                "password1": "testpass123",
+                "password2": "testpass123",
+            },
+        )
+
+        self.assertRedirects(response, reverse("home"))
+
+    def test_telegram_entry_is_public(self):
+        response = self.client.get(reverse("telegram_entry"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Opening Planly")
+
     def test_telegram_auth_creates_and_logs_in_user(self):
         init_data = telegram_init_data(
             "123:test-token",
@@ -78,3 +96,22 @@ class TelegramAuthTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertFalse(Profile.objects.filter(telegram_id=1002).exists())
+
+    def test_telegram_auth_rejects_invalid_auth_date(self):
+        init_data = telegram_init_data(
+            "123:test-token",
+            {
+                "id": 1003,
+                "username": "bad_date",
+            },
+            auth_date="not-a-number",
+        )
+
+        response = self.client.post(
+            reverse("telegram_auth"),
+            data=json.dumps({"init_data": init_data}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(Profile.objects.filter(telegram_id=1003).exists())

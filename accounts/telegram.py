@@ -33,7 +33,11 @@ def validate_telegram_init_data(init_data):
     if not received_hash:
         raise TelegramAuthError("Telegram auth hash is missing.")
 
-    auth_date = int(values.get("auth_date", "0") or "0")
+    try:
+        auth_date = int(values.get("auth_date", "0") or "0")
+    except ValueError as error:
+        raise TelegramAuthError("Telegram auth date is invalid.") from error
+
     max_age = settings.TELEGRAM_AUTH_MAX_AGE_SECONDS
 
     if max_age and time() - auth_date > max_age:
