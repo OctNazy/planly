@@ -12,9 +12,14 @@ wheels/
 # Local Django files
 db.sqlite3
 media/
+staticfiles/
 
 # macOS
 .DS_Store
 
 # Environment variables
 .env
+.env.local
+
+# Deploy tools
+.vercel/

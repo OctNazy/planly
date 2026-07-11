@@ -11,10 +11,44 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
+
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def env_bool(name, default=False):
+    value = os.environ.get(name)
+
+    if value is None:
+        return default
+
+    return value.lower() in {"1", "true", "yes", "on"}
+
+
+def env_list(name, default=None):
+    value = os.environ.get(name)
+
+    if not value:
+        return default or []
+
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+def require_env(name):
+    value = os.environ.get(name)
+
+    if not value:
+        raise RuntimeError(f"{name} is required when Supabase storage is enabled.")
+
+    return value
+
+
+def running_tests():
+    return "test" in sys.argv
 
 
 def load_local_env():
@@ -45,9 +79,20 @@ if not SECRET_KEY:
     raise RuntimeError('SECRET_KEY is not set. Create a .env file from .env.example.')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env_bool("DEBUG", default=True)
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", "192.168.115.32"]
+ALLOWED_HOSTS = env_list(
+    "ALLOWED_HOSTS",
+    default=["127.0.0.1", "localhost", "192.168.115.32"],
+)
+
+CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
+
+vercel_url = os.environ.get("VERCEL_URL")
+
+if vercel_url:
+    ALLOWED_HOSTS.append(vercel_url)
+    CSRF_TRUSTED_ORIGINS.append(f"https://{vercel_url}")
 
 
 # Application definition
@@ -65,6 +110,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -93,15 +139,32 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if running_tests() and env_bool("USE_SQLITE_FOR_TESTS", default=True):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": ":memory:",
+        }
     }
-}
+elif DATABASE_URL:
+    DATABASES = {
+        "default": dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=not DEBUG,
+        )
+    }
+elif not DEBUG:
+    raise RuntimeError("DATABASE_URL is required when DEBUG=False.")
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -138,11 +201,52 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-MEDIA_URL = 'media/'
+MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
+if env_bool("SUPABASE_STORAGE_ENABLED"):
+    AWS_ACCESS_KEY_ID = require_env("SUPABASE_STORAGE_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY = require_env("SUPABASE_STORAGE_SECRET_ACCESS_KEY")
+    AWS_STORAGE_BUCKET_NAME = require_env("SUPABASE_STORAGE_BUCKET_NAME")
+    AWS_S3_ENDPOINT_URL = require_env("SUPABASE_STORAGE_ENDPOINT_URL")
+    AWS_S3_REGION_NAME = os.environ.get("SUPABASE_STORAGE_REGION", "eu-central-1")
+    AWS_S3_ADDRESSING_STYLE = "path"
+    AWS_S3_SIGNATURE_VERSION = "s3v4"
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_DEFAULT_ACL = None
+    AWS_QUERYSTRING_AUTH = env_bool("SUPABASE_STORAGE_QUERYSTRING_AUTH", default=False)
+
+    supabase_public_url = os.environ.get("SUPABASE_STORAGE_PUBLIC_URL")
+
+    if supabase_public_url:
+        AWS_S3_CUSTOM_DOMAIN = supabase_public_url.replace("https://", "").rstrip("/")
+        AWS_S3_URL_PROTOCOL = "https:"
+        MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
+
+    STORAGES["default"] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+    }
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", default=not DEBUG)
+SESSION_COOKIE_SECURE = env_bool("SESSION_COOKIE_SECURE", default=not DEBUG)
+CSRF_COOKIE_SECURE = env_bool("CSRF_COOKIE_SECURE", default=not DEBUG)
+SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "60" if not DEBUG else "0"))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", default=not DEBUG)
+SECURE_HSTS_PRELOAD = env_bool("SECURE_HSTS_PRELOAD", default=not DEBUG)
 
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
