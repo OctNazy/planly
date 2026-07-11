@@ -6,8 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Planly</title>
     <link rel="stylesheet" href="{% static 'css/styles.css' %}?v=27">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
-<body>
+<body data-authenticated="{{ user.is_authenticated|yesno:'true,false' }}">
     <main class="app">
         <section class="content">
             {% block content %}
@@ -120,6 +121,43 @@
     </main>
 
     <script>
+        const telegramApp = window.Telegram && window.Telegram.WebApp;
+
+        if (telegramApp) {
+            telegramApp.ready();
+            telegramApp.expand();
+        }
+
+        async function authenticateTelegramMiniApp() {
+            if (!telegramApp || !telegramApp.initData) {
+                return;
+            }
+
+            if (sessionStorage.getItem("planlyTelegramAuthDone") === telegramApp.initData) {
+                return;
+            }
+
+            const response = await fetch("{% url 'telegram_auth' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ init_data: telegramApp.initData }),
+            });
+
+            if (!response.ok) {
+                return;
+            }
+
+            sessionStorage.setItem("planlyTelegramAuthDone", telegramApp.initData);
+
+            if (document.body.dataset.authenticated !== "true") {
+                window.location.replace("/");
+            }
+        }
+
+        authenticateTelegramMiniApp();
+
         document.addEventListener("click", (event) => {
             const backLink = event.target.closest("[data-back-link]");
 
