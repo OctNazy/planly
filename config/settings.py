@@ -88,11 +88,13 @@ ALLOWED_HOSTS = env_list(
 
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
 
-vercel_url = os.environ.get("VERCEL_URL")
-
-if vercel_url:
-    ALLOWED_HOSTS.append(vercel_url)
-    CSRF_TRUSTED_ORIGINS.append(f"https://{vercel_url}")
+for vercel_domain in [
+    os.environ.get("VERCEL_URL"),
+    os.environ.get("VERCEL_PROJECT_PRODUCTION_URL"),
+]:
+    if vercel_domain and vercel_domain not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(vercel_domain)
+        CSRF_TRUSTED_ORIGINS.append(f"https://{vercel_domain}")
 
 
 # Application definition
