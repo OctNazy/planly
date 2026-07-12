@@ -48,12 +48,27 @@ def initialize_telegram_profile(profile, telegram_user):
     save_telegram_avatar(profile, telegram_user)
 
 
-def telegram_avatar_name(profile, photo_url):
-    extension = Path(photo_url).suffix.lower()
+def avatar_extension(image_content, photo_url):
+    if image_content.startswith(b"\xff\xd8\xff"):
+        return ".jpg"
+    if image_content.startswith(b"\x89PNG"):
+        return ".png"
+    if image_content.startswith(b"RIFF") and image_content[8:12] == b"WEBP":
+        return ".webp"
 
-    if extension not in [".jpg", ".jpeg", ".png", ".webp"]:
-        extension = ".jpg"
+    stripped_content = image_content.lstrip()
+    if stripped_content.startswith((b"<svg", b"<?xml")):
+        return ".svg"
 
+    url_extension = Path(photo_url).suffix.lower()
+    if url_extension in [".jpg", ".jpeg", ".png", ".webp", ".svg"]:
+        return url_extension
+
+    return ".jpg"
+
+
+def telegram_avatar_name(profile, photo_url, image_content):
+    extension = avatar_extension(image_content, photo_url)
     return f"telegram_{profile.user_id}_{profile.telegram_id}{extension}"
 
 
@@ -75,7 +90,7 @@ def save_telegram_avatar(profile, telegram_user):
         return
 
     profile.avatar.save(
-        telegram_avatar_name(profile, telegram_user.photo_url),
+        telegram_avatar_name(profile, telegram_user.photo_url, image_content),
         ContentFile(image_content),
         save=True,
     )

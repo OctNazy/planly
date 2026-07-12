@@ -105,6 +105,28 @@ class TelegramAuthTests(TestCase):
         self.assertTrue(profile.avatar.name.startswith("avatars/telegram_"))
         self.assertTrue(profile.avatar.name.endswith(".jpg"))
 
+    @patch("accounts.views.download_telegram_avatar", return_value=b"\xff\xd8\xfffake-jpg")
+    def test_telegram_auth_uses_real_avatar_format_over_url_extension(self, _download_avatar):
+        init_data = telegram_init_data(
+            "123:test-token",
+            {
+                "id": 1008,
+                "username": "jpg_disguised_as_svg",
+                "photo_url": "https://example.com/avatar.svg",
+            },
+        )
+
+        response = self.client.post(
+            reverse("telegram_auth"),
+            data=json.dumps({"init_data": init_data}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        profile = Profile.objects.get(telegram_id=1008)
+        self.assertTrue(profile.avatar.name.startswith("avatars/telegram_"))
+        self.assertTrue(profile.avatar.name.endswith(".jpg"))
+
     @patch("accounts.views.download_telegram_avatar", return_value=b"fake-image")
     def test_telegram_auth_does_not_replace_existing_avatar(self, _download_avatar):
         user = User.objects.create_user(username="avatar_owner")
