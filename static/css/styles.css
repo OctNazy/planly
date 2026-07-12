@@ -291,8 +291,20 @@ dt,
 .compact-calendar-shell .calendar-scroll {
     width: 100%;
     max-width: 100%;
-    margin-right: 0;
-    margin-left: 0;
+    margin: 0;
+}
+
+.compact-calendar-shell .calendar-year-row,
+.compact-calendar-shell .calendar-sticky-head .calendar-weekdays,
+.compact-calendar-shell .month-label-row,
+.compact-calendar-shell .calendar-month .calendar-grid {
+    padding-right: 10px;
+    padding-left: 10px;
+}
+
+.compact-calendar-shell .calendar-day {
+    min-width: 0;
+    overflow: hidden;
 }
 
 .calendar-scroll {
