@@ -1,7 +1,10 @@
+from datetime import timedelta
+
 from django.test import TestCase
 from django.contrib.auth.models import User
 from django.db.models import Q
 from django.urls import reverse
+from django.utils import timezone
 
 from .models import (
     Event,
@@ -743,7 +746,7 @@ class EventViewsTests(TestCase):
         event = Event.objects.create(
             owner=self.user,
             title="Trip together",
-            start_at="2026-07-12T10:00Z",
+            start_at=timezone.now() + timedelta(days=1),
             visibility=Event.Visibility.INVITE_ONLY,
         )
         EventInvite.objects.create(
@@ -769,7 +772,7 @@ class EventViewsTests(TestCase):
         event = Event.objects.create(
             owner=self.user,
             title="Trip together",
-            start_at="2026-07-12T10:00Z",
+            start_at=timezone.now() + timedelta(days=1),
             visibility=Event.Visibility.INVITE_ONLY,
         )
         EventInvite.objects.create(

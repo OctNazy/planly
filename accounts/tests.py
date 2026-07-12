@@ -2,8 +2,10 @@ import hashlib
 import hmac
 import json
 from urllib.parse import urlencode
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
+from django.core.files.base import ContentFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
@@ -55,7 +57,8 @@ class TelegramAuthTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Opening Planly")
 
-    def test_telegram_auth_creates_and_logs_in_user(self):
+    @patch("accounts.views.download_telegram_avatar", return_value=b"fake-image")
+    def test_telegram_auth_creates_and_logs_in_user(self, _download_avatar):
         init_data = telegram_init_data(
             "123:test-token",
             {
@@ -79,6 +82,85 @@ class TelegramAuthTests(TestCase):
         self.assertEqual(profile.telegram_chat_id, 1001)
         self.assertEqual(profile.telegram_photo_url, "https://example.com/avatar.jpg")
         self.assertEqual(int(self.client.session["_auth_user_id"]), profile.user.id)
+
+    @patch("accounts.views.download_telegram_avatar", return_value=b"fake-image")
+    def test_telegram_auth_saves_photo_as_avatar(self, _download_avatar):
+        init_data = telegram_init_data(
+            "123:test-token",
+            {
+                "id": 1005,
+                "username": "avatar_user",
+                "photo_url": "https://example.com/avatar.jpg",
+            },
+        )
+
+        response = self.client.post(
+            reverse("telegram_auth"),
+            data=json.dumps({"init_data": init_data}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        profile = Profile.objects.get(telegram_id=1005)
+        self.assertTrue(profile.avatar.name.startswith("avatars/telegram_"))
+        self.assertTrue(profile.avatar.name.endswith(".jpg"))
+
+    @patch("accounts.views.download_telegram_avatar", return_value=b"fake-image")
+    def test_telegram_auth_does_not_replace_existing_avatar(self, _download_avatar):
+        user = User.objects.create_user(username="avatar_owner")
+        profile = Profile.objects.create(user=user, telegram_id=1006)
+        profile.avatar.save("avatars/manual.jpg", ContentFile(b"manual"), save=True)
+        init_data = telegram_init_data(
+            "123:test-token",
+            {
+                "id": 1006,
+                "username": "avatar_owner",
+                "photo_url": "https://example.com/avatar.jpg",
+            },
+        )
+
+        response = self.client.post(
+            reverse("telegram_auth"),
+            data=json.dumps({"init_data": init_data}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        profile.refresh_from_db()
+        self.assertIn("avatars/manual", profile.avatar.name)
+        _download_avatar.assert_not_called()
+
+    @patch("accounts.views.download_telegram_avatar", return_value=b"fake-image")
+    def test_telegram_auth_does_not_sync_existing_profile_data(self, _download_avatar):
+        user = User.objects.create_user(username="existing_user")
+        profile = Profile.objects.create(
+            user=user,
+            telegram_id=1007,
+            telegram_username="old_username",
+            telegram_chat_id=1007,
+            telegram_photo_url="https://example.com/old.jpg",
+        )
+        init_data = telegram_init_data(
+            "123:test-token",
+            {
+                "id": 1007,
+                "username": "new_username",
+                "photo_url": "https://example.com/new.jpg",
+            },
+        )
+
+        response = self.client.post(
+            reverse("telegram_auth"),
+            data=json.dumps({"init_data": init_data}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        profile.refresh_from_db()
+        self.assertEqual(profile.telegram_username, "old_username")
+        self.assertEqual(profile.telegram_photo_url, "https://example.com/old.jpg")
+        self.assertFalse(profile.avatar)
+        _download_avatar.assert_not_called()
 
     def test_telegram_auth_prefers_telegram_user_over_existing_session(self):
         admin = User.objects.create_user(username="OctoNaz")
