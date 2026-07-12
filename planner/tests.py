@@ -729,7 +729,7 @@ class EventViewsTests(TestCase):
         self.client.login(username="nazar", password="testpass123")
 
         response = self.client.get(
-            reverse("friend_profile", args=[self.other_user.username])
+            reverse("friend_profile", args=[self.other_user.id])
         )
 
         self.assertEqual(response.status_code, 200)
@@ -757,7 +757,7 @@ class EventViewsTests(TestCase):
         self.client.login(username="nazar", password="testpass123")
 
         response = self.client.get(
-            reverse("friend_profile", args=[self.other_user.username])
+            reverse("friend_profile", args=[self.other_user.id])
         )
 
         self.assertEqual(response.status_code, 200)
@@ -793,7 +793,7 @@ class EventViewsTests(TestCase):
         self.client.login(username="nazar", password="testpass123")
 
         response = self.client.get(
-            reverse("friend_profile", args=[self.other_user.username])
+            reverse("friend_profile", args=[self.other_user.id])
         )
 
         self.assertEqual(response.status_code, 404)
@@ -806,7 +806,7 @@ class EventViewsTests(TestCase):
         self.client.login(username="nazar", password="testpass123")
 
         response = self.client.get(
-            reverse("friend_profile", args=[self.other_user.username])
+            reverse("friend_profile", args=[self.other_user.id])
         )
 
         self.assertEqual(response.status_code, 200)
@@ -902,7 +902,7 @@ class EventViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(
             response,
-            reverse("friend_profile", args=[self.other_user.username]),
+            reverse("friend_profile", args=[self.other_user.id]),
         )
 
     def test_user_can_delete_own_notification(self):

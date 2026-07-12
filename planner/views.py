@@ -978,25 +978,37 @@ def friends(request):
     return render(request, "planner/friends.html", context)
 
 
-@login_required
-def friend_profile(request, username):
-    allowed_users = User.objects.filter(
+def allowed_profile_users(user):
+    return User.objects.filter(
         Q(
-            received_friend_requests__from_user=request.user,
+            received_friend_requests__from_user=user,
             received_friend_requests__status=FriendRequest.Status.ACCEPTED,
         )
         | Q(
-            sent_friend_requests__to_user=request.user,
+            sent_friend_requests__to_user=user,
             sent_friend_requests__status=FriendRequest.Status.ACCEPTED,
         )
         | Q(
-            sent_friend_requests__to_user=request.user,
+            sent_friend_requests__to_user=user,
             sent_friend_requests__status=FriendRequest.Status.PENDING,
         )
     ).distinct()
+
+
+@login_required
+def friend_profile_legacy(request, username):
     friend = get_object_or_404(
-        allowed_users.select_related("profile"),
+        allowed_profile_users(request.user),
         username=username,
+    )
+    return redirect("friend_profile", user_id=friend.id)
+
+
+@login_required
+def friend_profile(request, user_id):
+    friend = get_object_or_404(
+        allowed_profile_users(request.user).select_related("profile"),
+        id=user_id,
     )
     today = timezone.localdate()
     (

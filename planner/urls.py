@@ -30,7 +30,8 @@ urlpatterns = [
     path("friends/requests/<int:pk>/accept/", views.friend_request_accept, name="friend_request_accept"),
     path("friends/requests/<int:pk>/reject/", views.friend_request_reject, name="friend_request_reject"),
     path("friends/requests/<int:pk>/cancel/", views.friend_request_cancel, name="friend_request_cancel"),
-    path("friends/<str:username>/", views.friend_profile, name="friend_profile"),
+    path("friends/<int:user_id>/", views.friend_profile, name="friend_profile"),
+    path("friends/<str:username>/", views.friend_profile_legacy, name="friend_profile_legacy"),
 
     path("settings/", views.settings, name="settings"),
 

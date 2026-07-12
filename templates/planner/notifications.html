@@ -39,7 +39,7 @@
                 {% elif notification.action_friend_request %}
                     <article class="friend-row notification-row{% if not notification.is_read %} unread-notification{% endif %}">
                         <a
-                            href="{% url 'friend_profile' notification.action_friend_request.from_user.username %}"
+                            href="{% url 'friend_profile' notification.action_friend_request.from_user.id %}"
                             class="friend-main notification-main-link"
                         >
                             {% include "planner/partials/user_avatar.html" with person=notification.action_friend_request.from_user class_name="user-avatar" %}
@@ -71,7 +71,7 @@
                         <div>
                             {% if notification.kind == "friend_request" and notification.friend_request %}
                             <a
-                                href="{% url 'friend_profile' notification.friend_request.from_user.username %}"
+                                href="{% url 'friend_profile' notification.friend_request.from_user.id %}"
                                 class="notification-main-link"
                             >
                                 <h3>{{ notification.friend_request.from_user.username }}</h3>

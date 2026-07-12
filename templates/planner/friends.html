@@ -93,7 +93,7 @@
     <section class="event-list">
         {% for card in friend_cards %}
             <article class="friend-profile-card{% if card.shared_event_cards %} has-shared-events{% endif %}">
-                <a href="{% url 'friend_profile' card.friend.username %}" class="friend-row friend-profile-link">
+                <a href="{% url 'friend_profile' card.friend.id %}" class="friend-row friend-profile-link">
                     <div class="friend-main">
                         {% include "planner/partials/user_avatar.html" with person=card.friend class_name="user-avatar" %}
                         <div>
